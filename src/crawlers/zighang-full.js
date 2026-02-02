@@ -340,7 +340,7 @@ export async function fetchJobDetail(entry) {
  *    - onBatch: 배치 콜백 (Supabase 저장용)
  *    - onProgress: 진행 상태 콜백
  */
-export async function crawlAll({ sinceDate = null, onBatch = null, onProgress = null } = {}) {
+export async function crawlAll({ sinceDate = null, existingIds = null, onBatch = null, onProgress = null } = {}) {
   console.log('\n🚀 직항 전체 공고 크롤링 시작');
   console.log(`   모드: ${sinceDate ? `증분 (${sinceDate} 이후)` : '전체'}`);
   console.log(`   시간: ${new Date().toLocaleString('ko-KR')}\n`);
@@ -357,9 +357,18 @@ export async function crawlAll({ sinceDate = null, onBatch = null, onProgress = 
     console.log(`📊 증분 필터 (${sinceDate} 이후): ${entries.length}건`);
   }
 
+  // 이미 DB에 있는 공고 스킵 (중단 후 재개 시)
+  let skipped = 0;
+  if (existingIds && existingIds.size > 0) {
+    const before = entries.length;
+    entries = entries.filter(e => !existingIds.has(e.id));
+    skipped = before - entries.length;
+    console.log(`⏩ 이미 수집된 공고 스킵: ${skipped}건 (잔여: ${entries.length}건)`);
+  }
+
   if (entries.length === 0) {
     console.log('📭 수집할 공고가 없습니다.');
-    return { total: 0, success: 0, failed: 0, deleted: 0 };
+    return { total: 0, success: 0, failed: 0, deleted: 0, skipped, allSitemapIds };
   }
 
   // 2. 상세 페이지 크롤링 + 배치 저장

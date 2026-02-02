@@ -156,9 +156,35 @@ async function main() {
     }
   }
 
+  // full 크롤링 시 이미 수집된 ID 조회 → 스킵 (중단 후 재개)
+  let existingIds = null;
+  if (isFullCrawl) {
+    console.log('📦 DB에서 기존 공고 ID 조회...');
+    existingIds = new Set();
+    let offset = 0;
+    const FETCH_BATCH = 1000;
+    while (true) {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/jobs?select=id&order=id&limit=${FETCH_BATCH}&offset=${offset}`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+        }
+      );
+      const rows = await res.json();
+      if (!rows.length) break;
+      for (const r of rows) existingIds.add(r.id);
+      offset += FETCH_BATCH;
+    }
+    console.log(`  기존 공고: ${existingIds.size}건 → 이미 수집된 건 스킵`);
+  }
+
   // 크롤링 실행 (sinceDate는 상세 크롤링 범위만 제한, 사이트맵은 항상 전체)
   const result = await crawlAll({
     sinceDate,
+    existingIds,
     onBatch: saveBatch,
     onProgress: ({ current, total, success, failed }) => {
       // GitHub Actions 로그용
