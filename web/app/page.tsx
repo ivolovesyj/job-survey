@@ -129,50 +129,54 @@ export default function Home() {
         keywords: currentJob.reasons || [],
       })
 
-      // 보류(hold) 또는 지원 예정(apply)인 경우 saved_jobs에 저장
+      // 모든 액션을 saved_jobs에 저장 (pass 포함 - 지원관리에서 조회 가능)
       if (action === 'hold' || action === 'apply') {
         setAppliedJobs([...appliedJobs, currentJob])
+      }
 
-        const { data: savedJob, error: savedJobError } = await supabase
-          .from('saved_jobs')
+      const statusMap = { pass: 'passed', hold: 'hold', apply: 'pending' } as const
+
+      const { data: savedJob, error: savedJobError } = await supabase
+        .from('saved_jobs')
+        .upsert({
+          user_id: user.id,
+          job_id: currentJob.id,
+          source: currentJob.source,
+          company: currentJob.company,
+          title: currentJob.title,
+          location: currentJob.location,
+          link: currentJob.link,
+          deadline: currentJob.end_date || null,
+          score: currentJob.score,
+          reason: currentJob.reason,
+          reasons: currentJob.reasons || [],
+          warnings: currentJob.warnings || [],
+          description: currentJob.description,
+          detail: currentJob.detail || null,
+        })
+        .select()
+        .single()
+
+      if (savedJobError) {
+        console.error('Failed to save job:', savedJobError)
+        if (action !== 'pass') {
+          alert(`저장 실패: ${savedJobError.message || savedJobError.code || 'Unknown error'}`)
+        }
+        return
+      }
+
+      // application_status 생성/업데이트
+      if (savedJob) {
+        const { error: statusError } = await supabase
+          .from('application_status')
           .upsert({
             user_id: user.id,
-            job_id: currentJob.id,
-            source: currentJob.source,
-            company: currentJob.company,
-            title: currentJob.title,
-            location: currentJob.location,
-            link: currentJob.link,
-            deadline: currentJob.end_date || null,
-            score: currentJob.score,
-            reason: currentJob.reason,
-            reasons: currentJob.reasons || [],
-            warnings: currentJob.warnings || [],
-            description: currentJob.description,
-            detail: currentJob.detail || null,
+            saved_job_id: savedJob.id,
+            status: statusMap[action],
           })
-          .select()
-          .single()
 
-        if (savedJobError) {
-          console.error('Failed to save job:', savedJobError)
-          alert(`저장 실패: ${savedJobError.message || savedJobError.code || 'Unknown error'}`)
-          return
-        }
-
-        // application_status도 함께 생성
-        if (savedJob) {
-          const { error: statusError } = await supabase
-            .from('application_status')
-            .upsert({
-              user_id: user.id,
-              saved_job_id: savedJob.id,
-              status: action === 'hold' ? 'hold' : 'pending',
-            })
-
-          if (statusError) {
-            console.error('Failed to save status:', statusError)
-          }
+        if (statusError) {
+          console.error('Failed to save status:', statusError)
         }
       }
     } catch (error) {

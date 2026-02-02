@@ -6,6 +6,7 @@ import { ApplicationWithJob, ApplicationStatus, RequiredDocuments } from '@/type
 import { ApplicationCard } from '@/components/ApplicationCard'
 import { CompactApplicationRow } from '@/components/CompactApplicationRow'
 import { PinnedSection } from '@/components/PinnedSection'
+import { AddExternalJobModal } from '@/components/AddExternalJobModal'
 import { ApplicationToolbar, SortKey, ViewMode } from '@/components/ApplicationToolbar'
 import { getDeadlineSortValue } from '@/components/DeadlineBadge'
 import { Button } from '@/components/ui/button'
@@ -45,6 +46,9 @@ export default function ApplicationsPage() {
   // Phase 2: 핀 상태 + 순서
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
   const [pinOrder, setPinOrder] = useState<string[]>([])
+
+  // Phase 3: 외부 공고 모달
+  const [showExternalModal, setShowExternalModal] = useState(false)
 
   // 로그인 체크
   useEffect(() => {
@@ -273,6 +277,54 @@ export default function ApplicationsPage() {
     }
   }
 
+  const handleSaveExternal = async (data: { company: string; title: string; location: string; deadline: string; link: string; notes: string }) => {
+    if (!user) return
+    try {
+      // saved_jobs에 삽입
+      const { data: savedJob, error: saveError } = await supabase
+        .from('saved_jobs')
+        .insert({
+          user_id: user.id,
+          job_id: `external_${Date.now()}`,
+          source: 'external',
+          company: data.company,
+          title: data.title,
+          location: data.location,
+          link: data.link,
+          deadline: data.deadline || null,
+          is_external: true,
+          source_url: data.link,
+        })
+        .select()
+        .single()
+
+      if (saveError) throw saveError
+
+      // application_status 생성
+      const { data: status, error: statusError } = await supabase
+        .from('application_status')
+        .insert({
+          user_id: user.id,
+          saved_job_id: savedJob.id,
+          status: 'pending',
+          notes: data.notes || null,
+        })
+        .select()
+        .single()
+
+      if (statusError) throw statusError
+
+      // 로컬 상태 추가
+      setApplications((prev) => [
+        { ...status, saved_job: savedJob },
+        ...prev,
+      ])
+    } catch (error) {
+      console.error('Failed to save external job:', error)
+      alert('저장에 실패했습니다.')
+    }
+  }
+
   const handleLogout = async () => {
     try {
       await signOut()
@@ -462,6 +514,7 @@ export default function ApplicationsPage() {
           onSortChange={setSortKey}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onAddExternal={() => setShowExternalModal(true)}
         />
 
         {/* 필터 */}
@@ -556,6 +609,13 @@ export default function ApplicationsPage() {
           </>
         )}
       </main>
+
+      {/* 외부 공고 추가 모달 */}
+      <AddExternalJobModal
+        isOpen={showExternalModal}
+        onClose={() => setShowExternalModal(false)}
+        onSave={handleSaveExternal}
+      />
     </div>
   )
 }
