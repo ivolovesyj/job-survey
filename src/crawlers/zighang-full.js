@@ -106,7 +106,9 @@ export async function fetchAllJobUrls(sinceDate = null) {
 }
 
 /**
- * 4. 상세 페이지에서 공고 데이터 추출 (__NEXT_DATA__ 파싱)
+ * 4. 상세 페이지에서 공고 데이터 추출
+ *    직항이 Next.js App Router(RSC)로 전환되어 __NEXT_DATA__가 없음
+ *    → LD+JSON (schema.org/JobPosting) + OG 태그 + meta description에서 추출
  */
 export async function fetchJobDetail(entry) {
   try {
@@ -119,57 +121,78 @@ export async function fetchJobDetail(entry) {
     });
 
     const $ = cheerio.load(response.data);
-    const nextDataScript = $('#__NEXT_DATA__').html();
 
-    if (!nextDataScript) {
+    // 1. LD+JSON에서 JobPosting 데이터 추출
+    let jobPosting = null;
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const data = JSON.parse($(el).html());
+        if (data['@type'] === 'JobPosting') jobPosting = data;
+      } catch {}
+    });
+
+    if (!jobPosting) {
       return null;
     }
 
-    const nextData = JSON.parse(nextDataScript);
-    const recruitment = nextData?.props?.pageProps?.recruitment;
+    // 2. OG title 파싱: [회사명] 공고제목 채용 | 직군분류
+    const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+    const ogDesc = $('meta[property="og:description"]').attr('content') || '';
+    const ogImage = $('meta[property="og:image"]').attr('content') || null;
 
-    if (!recruitment) {
-      return null;
+    let depthOnes = [];
+    const titleMatch = ogTitle.match(/\[.+?\]\s*.+?\s*채용\s*\|\s*(.+)/);
+    if (titleMatch) {
+      depthOnes = [titleMatch[1].trim()];
     }
+
+    // 3. employmentType 변환
+    const typeMap = { 'FULL_TIME': '정규직', 'PART_TIME': '파트타임', 'CONTRACT': '계약직', 'INTERN': '인턴' };
+    const employeeTypes = (jobPosting.employmentType || []).map(t => typeMap[t] || t);
+
+    // 4. 위치 추출
+    const locations = (jobPosting.jobLocation || []).map(loc =>
+      loc?.address?.addressLocality || ''
+    ).filter(Boolean);
 
     return {
       id: entry.id,
       source: 'zighang',
 
       // 회사 정보
-      company: recruitment.company?.name || '',
-      company_image: recruitment.company?.logoUrl || recruitment.company?.imageUrl || null,
+      company: jobPosting.hiringOrganization?.name || '',
+      company_image: ogImage,
 
       // 공고 기본 정보
-      title: recruitment.title || '',
-      regions: recruitment.regions || [],
-      location: recruitment.regions?.[0] || recruitment.location || '',
-      career_min: recruitment.careerMin ?? null,
-      career_max: recruitment.careerMax ?? null,
-      employee_types: recruitment.employeeTypes || [],
-      deadline_type: recruitment.deadlineType || null,
-      end_date: recruitment.endDate || null,
+      title: jobPosting.title || '',
+      regions: locations,
+      location: locations[0] || '',
+      career_min: null, // LD+JSON에는 경력 정보 없음
+      career_max: null,
+      employee_types: employeeTypes,
+      deadline_type: null,
+      end_date: null,
 
       // 직군 분류
-      depth_ones: recruitment.depthOnes || [],
-      depth_twos: recruitment.depthTwos || [],
-      keywords: recruitment.keywords || [],
+      depth_ones: depthOnes,
+      depth_twos: [],
+      keywords: [],
 
       // 조회수
-      views: recruitment.views || 0,
+      views: 0,
 
-      // 상세 정보
+      // 상세 정보 (OG description에 담당업무/자격요건 등이 텍스트로 포함)
       detail: {
-        intro: recruitment.intro || '',
-        main_tasks: recruitment.mainTasks || '',
-        requirements: recruitment.requirements || '',
-        preferred_points: recruitment.preferredPoints || '',
-        benefits: recruitment.benefits || '',
-        work_conditions: recruitment.workConditions || '',
+        intro: '',
+        main_tasks: ogDesc || '',
+        requirements: '',
+        preferred_points: '',
+        benefits: '',
+        work_conditions: '',
       },
 
       // 타임스탬프
-      original_created_at: recruitment.createdAt || null,
+      original_created_at: jobPosting.datePosted || null,
       last_modified_at: entry.lastmod?.toISOString() || null,
       crawled_at: new Date().toISOString(),
 
@@ -177,7 +200,6 @@ export async function fetchJobDetail(entry) {
     };
   } catch (error) {
     if (error.response?.status === 404) {
-      // 삭제된 공고 → is_active = false 처리용
       return { id: entry.id, _deleted: true };
     }
     console.error(`  ✗ ${entry.id}: ${error.message}`);
