@@ -106,9 +106,74 @@ export async function fetchAllJobUrls(sinceDate = null) {
 }
 
 /**
+ * ProseMirror/TipTap JSON doc → 평문 텍스트 변환
+ */
+function prosemirrorToText(doc) {
+  if (!doc || typeof doc === 'string') return doc || '';
+  if (typeof doc !== 'object') return String(doc);
+
+  function walk(node) {
+    if (!node) return '';
+    if (node.type === 'text') return node.text || '';
+    if (!node.content) return '';
+    const parts = node.content.map(walk);
+    // 블록 노드 사이에 줄바꿈 추가
+    const blockTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote'];
+    if (blockTypes.includes(node.type)) {
+      return parts.join('') + '\n';
+    }
+    return parts.join('');
+  }
+  return walk(doc).replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
+ * RSC flight data에서 "recruitment":{...} JSON 객체 추출
+ */
+function extractRecruitmentFromRsc(html) {
+  // RSC chunks를 디코딩하여 합치기
+  const rscChunks = [];
+  const regex = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    const decoded = match[1]
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
+    rscChunks.push(decoded);
+  }
+  const fullRsc = rscChunks.join('');
+
+  // "recruitment":{ 위치 찾기
+  const recruitStart = fullRsc.indexOf('"recruitment":{');
+  if (recruitStart === -1) return null;
+
+  // 중괄호 매칭으로 JSON 객체 범위 추출
+  const objStart = recruitStart + '"recruitment":'.length;
+  let depth = 0;
+  let objEnd = objStart;
+  for (let i = objStart; i < fullRsc.length; i++) {
+    if (fullRsc[i] === '{') depth++;
+    else if (fullRsc[i] === '}') {
+      depth--;
+      if (depth === 0) {
+        objEnd = i + 1;
+        break;
+      }
+    }
+  }
+
+  try {
+    return JSON.parse(fullRsc.substring(objStart, objEnd));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 4. 상세 페이지에서 공고 데이터 추출
- *    직항이 Next.js App Router(RSC)로 전환되어 __NEXT_DATA__가 없음
- *    → LD+JSON (schema.org/JobPosting) + OG 태그 + meta description에서 추출
+ *    RSC flight data에서 "recruitment":{...} JSON 추출
+ *    fallback: LD+JSON + OG 태그
  */
 export async function fetchJobDetail(entry) {
   try {
@@ -120,9 +185,54 @@ export async function fetchJobDetail(entry) {
       timeout: 10000,
     });
 
-    const $ = cheerio.load(response.data);
+    const html = response.data;
+    const $ = cheerio.load(html);
 
-    // 1. LD+JSON에서 JobPosting 데이터 추출
+    // 1차: RSC flight data에서 풍부한 데이터 추출
+    const recruitment = extractRecruitmentFromRsc(html);
+
+    if (recruitment) {
+      return {
+        id: entry.id,
+        source: 'zighang',
+
+        company: recruitment.company?.name || '',
+        company_image: recruitment.company?.image || null,
+
+        title: recruitment.title || '',
+        regions: recruitment.regions || [],
+        location: recruitment.regions?.[0] || '',
+        career_min: recruitment.careerMin ?? null,
+        career_max: recruitment.careerMax ?? null,
+        employee_types: recruitment.employeeTypes || [],
+        deadline_type: recruitment.deadlineType || null,
+        end_date: recruitment.endDate || null,
+
+        depth_ones: recruitment.depthOnes || [],
+        depth_twos: recruitment.depthTwos || [],
+        keywords: recruitment.keywords || [],
+
+        views: recruitment.views || 0,
+
+        // summary/content를 평문 변환
+        detail: {
+          intro: '',
+          main_tasks: prosemirrorToText(recruitment.content) || prosemirrorToText(recruitment.summary) || $('meta[property="og:description"]').attr('content') || '',
+          requirements: '',
+          preferred_points: '',
+          benefits: '',
+          work_conditions: '',
+        },
+
+        original_created_at: recruitment.createdAt || null,
+        last_modified_at: entry.lastmod?.toISOString() || null,
+        crawled_at: new Date().toISOString(),
+
+        is_active: recruitment.status === 'ACTIVE',
+      };
+    }
+
+    // 2차 fallback: LD+JSON
     let jobPosting = null;
     $('script[type="application/ld+json"]').each((_, el) => {
       try {
@@ -131,71 +241,40 @@ export async function fetchJobDetail(entry) {
       } catch {}
     });
 
-    if (!jobPosting) {
-      return null;
-    }
+    if (!jobPosting) return null;
 
-    // 2. OG title 파싱: [회사명] 공고제목 채용 | 직군분류
     const ogTitle = $('meta[property="og:title"]').attr('content') || '';
     const ogDesc = $('meta[property="og:description"]').attr('content') || '';
-    const ogImage = $('meta[property="og:image"]').attr('content') || null;
 
     let depthOnes = [];
     const titleMatch = ogTitle.match(/\[.+?\]\s*.+?\s*채용\s*\|\s*(.+)/);
-    if (titleMatch) {
-      depthOnes = [titleMatch[1].trim()];
-    }
+    if (titleMatch) depthOnes = [titleMatch[1].trim()];
 
-    // 3. employmentType 변환
     const typeMap = { 'FULL_TIME': '정규직', 'PART_TIME': '파트타임', 'CONTRACT': '계약직', 'INTERN': '인턴' };
     const employeeTypes = (jobPosting.employmentType || []).map(t => typeMap[t] || t);
-
-    // 4. 위치 추출
-    const locations = (jobPosting.jobLocation || []).map(loc =>
-      loc?.address?.addressLocality || ''
-    ).filter(Boolean);
+    const locations = (jobPosting.jobLocation || []).map(loc => loc?.address?.addressLocality || '').filter(Boolean);
 
     return {
       id: entry.id,
       source: 'zighang',
-
-      // 회사 정보
       company: jobPosting.hiringOrganization?.name || '',
-      company_image: ogImage,
-
-      // 공고 기본 정보
+      company_image: null,
       title: jobPosting.title || '',
       regions: locations,
       location: locations[0] || '',
-      career_min: null, // LD+JSON에는 경력 정보 없음
+      career_min: null,
       career_max: null,
       employee_types: employeeTypes,
       deadline_type: null,
       end_date: null,
-
-      // 직군 분류
       depth_ones: depthOnes,
       depth_twos: [],
       keywords: [],
-
-      // 조회수
       views: 0,
-
-      // 상세 정보 (OG description에 담당업무/자격요건 등이 텍스트로 포함)
-      detail: {
-        intro: '',
-        main_tasks: ogDesc || '',
-        requirements: '',
-        preferred_points: '',
-        benefits: '',
-        work_conditions: '',
-      },
-
-      // 타임스탬프
+      detail: { intro: '', main_tasks: ogDesc || '', requirements: '', preferred_points: '', benefits: '', work_conditions: '' },
       original_created_at: jobPosting.datePosted || null,
       last_modified_at: entry.lastmod?.toISOString() || null,
       crawled_at: new Date().toISOString(),
-
       is_active: true,
     };
   } catch (error) {
