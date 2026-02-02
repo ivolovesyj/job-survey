@@ -345,8 +345,17 @@ export async function crawlAll({ sinceDate = null, onBatch = null, onProgress = 
   console.log(`   모드: ${sinceDate ? `증분 (${sinceDate} 이후)` : '전체'}`);
   console.log(`   시간: ${new Date().toLocaleString('ko-KR')}\n`);
 
-  // 1. 전체 URL 수집
-  const entries = await fetchAllJobUrls(sinceDate);
+  // 1. 전체 URL 수집 (사이트맵 diff용으로 전체 ID도 확보)
+  const allEntries = await fetchAllJobUrls(null); // 항상 전체 사이트맵 수집
+  const allSitemapIds = new Set(allEntries.map(e => e.id));
+
+  // 증분 모드면 sinceDate 이후만 상세 크롤링
+  let entries = allEntries;
+  if (sinceDate) {
+    const since = new Date(sinceDate);
+    entries = allEntries.filter(e => e.lastmod && e.lastmod > since);
+    console.log(`📊 증분 필터 (${sinceDate} 이후): ${entries.length}건`);
+  }
 
   if (entries.length === 0) {
     console.log('📭 수집할 공고가 없습니다.');
@@ -398,7 +407,8 @@ export async function crawlAll({ sinceDate = null, onBatch = null, onProgress = 
     await onBatch(batch);
   }
 
-  const result = { total: entries.length, success, failed, deleted };
-  console.log(`\n✅ 크롤링 완료: ${JSON.stringify(result)}`);
+  const result = { total: entries.length, success, failed, deleted, allSitemapIds };
+  console.log(`\n✅ 크롤링 완료: 총 ${entries.length}건, 성공 ${success}, 실패 ${failed}, 삭제 ${deleted}`);
+  console.log(`   사이트맵 전체 ID: ${allSitemapIds.size}건`);
   return result;
 }

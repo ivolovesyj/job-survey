@@ -144,7 +144,8 @@ async function main() {
   console.log(`시간: ${new Date().toLocaleString('ko-KR')}`);
   console.log(`모드: ${isFullCrawl ? '전체 수집' : '증분 수집'}\n`);
 
-  // 증분 크롤링: 마지막 수집일 이후만
+  // 증분 크롤링: 마지막 수집일 이후 수정된 공고만 상세 크롤링
+  // (사이트맵 전체 URL은 항상 수집 → diff용)
   let sinceDate = null;
   if (!isFullCrawl) {
     sinceDate = await getLastCrawledAt();
@@ -155,7 +156,7 @@ async function main() {
     }
   }
 
-  // 크롤링 실행
+  // 크롤링 실행 (sinceDate는 상세 크롤링 범위만 제한, 사이트맵은 항상 전체)
   const result = await crawlAll({
     sinceDate,
     onBatch: saveBatch,
@@ -163,6 +164,66 @@ async function main() {
       // GitHub Actions 로그용
     },
   });
+
+  // === 마감 처리 ===
+
+  // ① end_date 지난 공고 자동 비활성화
+  console.log('\n🔒 마감일 지난 공고 비활성화...');
+  const today = new Date().toISOString().split('T')[0];
+  const expiredRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/jobs?is_active=eq.true&end_date=lt.${today}&end_date=neq.`,
+    {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=headers-only,count=exact',
+      },
+      body: JSON.stringify({ is_active: false }),
+    }
+  );
+  const expiredCount = expiredRes.headers.get('content-range')?.match(/\d+$/)?.[0] || '0';
+  console.log(`  📅 end_date 만료: ${expiredCount}건 비활성화`);
+
+  // ② 사이트맵 diff: DB에는 있지만 사이트맵에 없는 공고 비활성화
+  if (result.allSitemapIds && result.allSitemapIds.size > 0) {
+    console.log('\n🔍 사이트맵 diff 비활성화...');
+    let diffOffset = 0;
+    const DIFF_BATCH = 1000;
+    let diffDeactivated = 0;
+
+    while (true) {
+      const dbRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/jobs?is_active=eq.true&select=id&order=id&limit=${DIFF_BATCH}&offset=${diffOffset}`,
+        {
+          headers: {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+          },
+        }
+      );
+      const dbJobs = await dbRes.json();
+      if (!dbJobs.length) break;
+
+      const toDeactivate = dbJobs.filter(j => !result.allSitemapIds.has(j.id)).map(j => j.id);
+
+      for (const id of toDeactivate) {
+        await fetch(`${SUPABASE_URL}/rest/v1/jobs?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_active: false }),
+        });
+      }
+      diffDeactivated += toDeactivate.length;
+      diffOffset += DIFF_BATCH;
+    }
+    console.log(`  🗑️ 사이트맵에서 제거됨: ${diffDeactivated}건 비활성화`);
+  }
 
   // 메타데이터 업데이트
   await updateCrawlMetadata(result);
