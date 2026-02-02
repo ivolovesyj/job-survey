@@ -9,8 +9,8 @@ const HEADERS = {
   'Accept': 'text/html,application/xml',
 };
 
-const DELAY_MS = 500; // 요청 간 딜레이
-const DETAIL_DELAY_MS = 500;
+const DELAY_MS = 300; // 사이트맵 요청 간 딜레이
+const CONCURRENCY = 5; // 상세 페이지 동시 요청 수
 const BATCH_SIZE = 50; // Supabase upsert 배치 크기
 
 /**
@@ -371,27 +371,30 @@ export async function crawlAll({ sinceDate = null, existingIds = null, onBatch =
     return { total: 0, success: 0, failed: 0, deleted: 0, skipped, allSitemapIds };
   }
 
-  // 2. 상세 페이지 크롤링 + 배치 저장
+  // 2. 상세 페이지 크롤링 + 배치 저장 (동시 요청)
   let success = 0;
   let failed = 0;
   let deleted = 0;
   let batch = [];
+  let processed = 0;
 
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
-    const job = await fetchJobDetail(entry);
+  for (let i = 0; i < entries.length; i += CONCURRENCY) {
+    const chunk = entries.slice(i, i + CONCURRENCY);
+    const jobs = await Promise.all(chunk.map(entry => fetchJobDetail(entry)));
 
-    if (job) {
-      if (job._deleted) {
-        deleted++;
-        // 삭제된 공고도 배치에 포함 (is_active=false 처리)
-        batch.push({ id: job.id, is_active: false });
+    for (const job of jobs) {
+      processed++;
+      if (job) {
+        if (job._deleted) {
+          deleted++;
+          batch.push({ id: job.id, is_active: false });
+        } else {
+          success++;
+          batch.push(job);
+        }
       } else {
-        success++;
-        batch.push(job);
+        failed++;
       }
-    } else {
-      failed++;
     }
 
     // 배치 크기 도달 시 콜백 호출
@@ -401,14 +404,14 @@ export async function crawlAll({ sinceDate = null, existingIds = null, onBatch =
     }
 
     // 진행 상태 출력
-    if ((i + 1) % 100 === 0 || i === entries.length - 1) {
-      const progress = `${i + 1}/${entries.length}`;
+    if (processed % 100 < CONCURRENCY || i + CONCURRENCY >= entries.length) {
+      const progress = `${processed}/${entries.length}`;
       const stats = `성공: ${success}, 실패: ${failed}, 삭제: ${deleted}`;
       console.log(`  📈 [${progress}] ${stats}`);
-      if (onProgress) onProgress({ current: i + 1, total: entries.length, success, failed, deleted });
+      if (onProgress) onProgress({ current: processed, total: entries.length, success, failed, deleted });
     }
 
-    await sleep(DETAIL_DELAY_MS);
+    await sleep(200); // 동시 요청 간 짧은 딜레이 (서버 부하 방지)
   }
 
   // 남은 배치 처리
