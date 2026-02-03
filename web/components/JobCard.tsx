@@ -43,8 +43,18 @@ function compactText(text: string): string {
 
 export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [clickedBtn, setClickedBtn] = useState<'pass' | 'hold' | 'apply' | null>(null)
   const matchPercent = job.score
   const deadline = formatDeadline(job)
+
+  const handleButtonClick = (action: 'pass' | 'hold' | 'apply', callback?: () => void) => {
+    setClickedBtn(action)
+    // 애니메이션 후 콜백 실행
+    setTimeout(() => {
+      callback?.()
+      setClickedBtn(null)
+    }, 300)
+  }
 
   // 직군 태그: depth_twos 우선, 없으면 depth_ones
   const tags = (job.depth_twos?.length ? job.depth_twos : job.depth_ones) || []
@@ -221,38 +231,44 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
         <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
-            className="flex-1 h-12 border-red-200 hover:border-red-300 hover:bg-red-50 transition-colors font-medium"
+            className={`flex-1 h-12 border-red-200 hover:border-red-300 hover:bg-red-50 transition-all font-medium ${
+              clickedBtn === 'pass' ? 'animate-pulse bg-red-100 border-red-400 scale-95' : ''
+            }`}
             onClick={(e) => {
               e.stopPropagation()
-              onPass?.()
+              handleButtonClick('pass', onPass)
             }}
-            disabled={disabled}
+            disabled={disabled || clickedBtn !== null}
           >
-            <X className="h-4 w-4 mr-1.5 text-red-600" />
-            <span className="text-sm text-red-700">지원 안 함</span>
+            <X className={`h-4 w-4 mr-1.5 text-red-600 ${clickedBtn === 'pass' ? 'animate-bounce' : ''}`} />
+            <span className="text-sm text-red-700">{clickedBtn === 'pass' ? '처리중...' : '지원 안 함'}</span>
           </Button>
           <Button
             variant="outline"
-            className="flex-1 h-12 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-colors font-medium"
+            className={`flex-1 h-12 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all font-medium ${
+              clickedBtn === 'hold' ? 'animate-pulse bg-yellow-100 border-yellow-400 scale-95' : ''
+            }`}
             onClick={(e) => {
               e.stopPropagation()
-              onHold?.()
+              handleButtonClick('hold', onHold)
             }}
-            disabled={disabled}
+            disabled={disabled || clickedBtn !== null}
           >
-            <Clock className="h-4 w-4 mr-1.5 text-gray-600" />
-            <span className="text-sm text-gray-700">보류</span>
+            <Clock className={`h-4 w-4 mr-1.5 text-gray-600 ${clickedBtn === 'hold' ? 'animate-bounce' : ''}`} />
+            <span className="text-sm text-gray-700">{clickedBtn === 'hold' ? '처리중...' : '보류'}</span>
           </Button>
           <Button
-            className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 transition-colors font-medium"
+            className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 transition-all font-medium ${
+              clickedBtn === 'apply' ? 'animate-pulse bg-green-500 scale-95' : ''
+            }`}
             onClick={(e) => {
               e.stopPropagation()
-              onApply?.()
+              handleButtonClick('apply', onApply)
             }}
-            disabled={disabled}
+            disabled={disabled || clickedBtn !== null}
           >
-            <Check className="h-4 w-4 mr-1.5" />
-            <span className="text-sm">지원 예정</span>
+            <Check className={`h-4 w-4 mr-1.5 ${clickedBtn === 'apply' ? 'animate-bounce' : ''}`} />
+            <span className="text-sm">{clickedBtn === 'apply' ? '처리중...' : '지원 예정'}</span>
           </Button>
         </div>
       </CardContent>

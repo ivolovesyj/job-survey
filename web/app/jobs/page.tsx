@@ -409,29 +409,54 @@ export default function Home() {
 
       const statusMap = { pass: 'passed', hold: 'hold', apply: 'pending' } as const
 
-      const { data: savedJob, error: savedJobError } = await supabase
+      const savedJobData = {
+        user_id: user.id,
+        job_id: currentJob.id,
+        source: currentJob.source,
+        company: currentJob.company,
+        title: currentJob.title,
+        location: currentJob.location,
+        link: currentJob.link,
+        deadline: currentJob.end_date || null,
+        score: currentJob.score,
+        reason: currentJob.reason,
+        reasons: currentJob.reasons || [],
+        warnings: currentJob.warnings || [],
+        description: currentJob.description,
+        detail: currentJob.detail || null,
+      }
+
+      // 기존 saved_job 확인
+      const { data: existingSavedJob } = await supabase
         .from('saved_jobs')
-        .upsert(
-          {
-            user_id: user.id,
-            job_id: currentJob.id,
-            source: currentJob.source,
-            company: currentJob.company,
-            title: currentJob.title,
-            location: currentJob.location,
-            link: currentJob.link,
-            deadline: currentJob.end_date || null,
-            score: currentJob.score,
-            reason: currentJob.reason,
-            reasons: currentJob.reasons || [],
-            warnings: currentJob.warnings || [],
-            description: currentJob.description,
-            detail: currentJob.detail || null,
-          },
-          { onConflict: 'user_id,job_id' }
-        )
-        .select()
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('job_id', currentJob.id)
         .single()
+
+      let savedJob
+      let savedJobError
+
+      if (existingSavedJob) {
+        // 기존 데이터 있으면 update
+        const result = await supabase
+          .from('saved_jobs')
+          .update(savedJobData)
+          .eq('id', existingSavedJob.id)
+          .select()
+          .single()
+        savedJob = result.data
+        savedJobError = result.error
+      } else {
+        // 없으면 insert
+        const result = await supabase
+          .from('saved_jobs')
+          .insert(savedJobData)
+          .select()
+          .single()
+        savedJob = result.data
+        savedJobError = result.error
+      }
 
       if (savedJobError) {
         console.error('Failed to save job:', savedJobError)
@@ -443,19 +468,31 @@ export default function Home() {
 
       // application_status 생성/업데이트
       if (savedJob) {
-        const { error: statusError } = await supabase
+        // 기존 status 확인
+        const { data: existingStatus } = await supabase
           .from('application_status')
-          .upsert(
-            {
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('saved_job_id', savedJob.id)
+          .single()
+
+        if (existingStatus) {
+          await supabase
+            .from('application_status')
+            .update({ status: statusMap[action] })
+            .eq('id', existingStatus.id)
+        } else {
+          const { error: statusError } = await supabase
+            .from('application_status')
+            .insert({
               user_id: user.id,
               saved_job_id: savedJob.id,
               status: statusMap[action],
-            },
-            { onConflict: 'user_id,saved_job_id' }
-          )
+            })
 
-        if (statusError) {
-          console.error('Failed to save status:', statusError)
+          if (statusError) {
+            console.error('Failed to save status:', statusError)
+          }
         }
       }
 

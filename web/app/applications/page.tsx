@@ -585,8 +585,12 @@ export default function ApplicationsPage() {
                 </Button>
               </Link>
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => setShowExternalModal(true)}
+                onClick={() => {
+                  console.log('지원 내역 직접 추가 버튼 클릭됨')
+                  setShowExternalModal(true)
+                }}
                 className="gap-2"
               >
                 지원 내역 직접 추가

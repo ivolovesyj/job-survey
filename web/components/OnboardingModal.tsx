@@ -211,16 +211,36 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
     setSaving(true)
     try {
-      const { error } = await supabase.from('user_preferences').upsert(
-        {
-          user_id: user.id,
-          preferred_job_types: selectedJobs,
-          preferred_locations: selectedLocations.length > 0 ? selectedLocations : ['서울'],
-          career_level: selectedCareers.join(','),
-          work_style: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : ['정규직'],
-        },
-        { onConflict: 'user_id' }
-      )
+      const prefData = {
+        user_id: user.id,
+        preferred_job_types: selectedJobs,
+        preferred_locations: selectedLocations.length > 0 ? selectedLocations : ['서울'],
+        career_level: selectedCareers.join(','),
+        work_style: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : ['정규직'],
+      }
+
+      // 기존 데이터 확인
+      const { data: existing } = await supabase
+        .from('user_preferences')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      let error
+      if (existing) {
+        // 기존 데이터 있으면 update
+        const result = await supabase
+          .from('user_preferences')
+          .update(prefData)
+          .eq('user_id', user.id)
+        error = result.error
+      } else {
+        // 없으면 insert
+        const result = await supabase
+          .from('user_preferences')
+          .insert(prefData)
+        error = result.error
+      }
 
       if (error) {
         console.error('Supabase error:', error)
@@ -229,17 +249,21 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       }
 
       // user_profiles의 onboarding_completed를 true로 설정
-      const { error: profileError } = await supabase.from('user_profiles').upsert(
-        {
-          id: user.id,
-          onboarding_completed: true,
-        },
-        { onConflict: 'id' }
-      )
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single()
 
-      if (profileError) {
-        console.error('Profile update error:', profileError)
-        // 프로필 업데이트 실패해도 기본 설정은 저장됨
+      if (existingProfile) {
+        await supabase
+          .from('user_profiles')
+          .update({ onboarding_completed: true })
+          .eq('id', user.id)
+      } else {
+        await supabase
+          .from('user_profiles')
+          .insert({ id: user.id, onboarding_completed: true })
       }
 
       // 저장 성공시 localStorage 초기화
@@ -259,36 +283,68 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       return
     }
 
+    setSaving(true)
     try {
-      const { error } = await supabase.from('user_preferences').upsert(
-        {
-          user_id: user.id,
-          preferred_job_types: ['IT·개발 전체'],
-          preferred_locations: ['서울'],
-          career_level: '경력무관',
-          work_style: ['정규직'],
-        },
-        { onConflict: 'user_id' }
-      )
+      const prefData = {
+        user_id: user.id,
+        preferred_job_types: ['IT·개발 전체'],
+        preferred_locations: ['서울'],
+        career_level: '경력무관',
+        work_style: ['정규직'],
+      }
+
+      // 기존 데이터 확인
+      const { data: existing } = await supabase
+        .from('user_preferences')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      let error
+      if (existing) {
+        const result = await supabase
+          .from('user_preferences')
+          .update(prefData)
+          .eq('user_id', user.id)
+        error = result.error
+      } else {
+        const result = await supabase
+          .from('user_preferences')
+          .insert(prefData)
+        error = result.error
+      }
 
       if (error) {
-        console.error('Supabase error:', error)
+        console.error('Supabase preferences error:', error)
+        alert(`저장 실패: ${error.message}`)
         return
       }
 
       // user_profiles의 onboarding_completed를 true로 설정
-      await supabase.from('user_profiles').upsert(
-        {
-          id: user.id,
-          onboarding_completed: true,
-        },
-        { onConflict: 'id' }
-      )
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single()
+
+      if (existingProfile) {
+        await supabase
+          .from('user_profiles')
+          .update({ onboarding_completed: true })
+          .eq('id', user.id)
+      } else {
+        await supabase
+          .from('user_profiles')
+          .insert({ id: user.id, onboarding_completed: true })
+      }
 
       clearOnboardingState()
       onComplete()
     } catch (error) {
       console.error('Failed to save default preferences:', error)
+      alert('저장 실패: 네트워크 오류')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -312,12 +368,12 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   return (
     <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <CardContent className="p-6">
+        <CardContent className="p-4 pt-3">
           {/* 헤더 */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">선호 조건 설정</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-lg font-bold text-gray-900">선호 조건 설정</h2>
+              <p className="text-xs text-gray-600 mt-0.5">
                 Step {step}/4 - 더 정확한 공고를 추천해드려요
               </p>
             </div>
@@ -331,18 +387,18 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
           {/* Step 1: 직무 (계층형) */}
           {step === 1 && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">관심있는 직무를 선택해주세요</h3>
-                <p className="text-sm text-gray-600 mb-4">대분류를 클릭하면 세부 직무를 선택할 수 있어요</p>
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm">관심있는 직무를 선택해주세요</h3>
+                <p className="text-xs text-gray-600 mb-2">대분류를 클릭하면 세부 직무를 선택할 수 있어요</p>
 
                 {/* 선택된 직무 태그 */}
                 {selectedJobs.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex flex-wrap gap-1.5 mb-2 p-2 bg-blue-50 rounded-lg">
                     {selectedJobs.map(job => (
                       <span
                         key={job}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm rounded-full"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full"
                       >
                         {job}
                         <button
@@ -357,33 +413,33 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                 )}
 
                 {/* 대분류 아코디언 */}
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                <div className="space-y-1.5 max-h-[350px] overflow-y-auto">
                   {Object.keys(JOB_CATEGORIES).map(category => (
                     <div key={category} className="border rounded-lg overflow-hidden">
                       <button
                         onClick={() => handleCategorySelect(category)}
-                        className={`w-full flex items-center justify-between px-4 py-3 text-left transition ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left transition ${
                           selectedCategory === category
                             ? 'bg-gray-100'
                             : 'bg-white hover:bg-gray-50'
                         }`}
                       >
-                        <span className="font-medium text-gray-900">{category}</span>
+                        <span className="font-medium text-gray-900 text-sm">{category}</span>
                         <ChevronDown
-                          className={`w-5 h-5 text-gray-500 transition-transform ${
+                          className={`w-4 h-4 text-gray-500 transition-transform ${
                             selectedCategory === category ? 'rotate-180' : ''
                           }`}
                         />
                       </button>
 
                       {selectedCategory === category && (
-                        <div className="px-4 py-3 bg-gray-50 border-t">
-                          <div className="flex flex-wrap gap-2">
+                        <div className="px-3 py-2 bg-gray-50 border-t">
+                          <div className="flex flex-wrap gap-1.5">
                             {JOB_CATEGORIES[category].map(job => (
                               <button
                                 key={job}
                                 onClick={() => handleJobSelect(category, job)}
-                                className={`px-3 py-1.5 text-sm rounded-full border transition ${
+                                className={`px-2 py-1 text-xs rounded-full border transition ${
                                   isJobSelected(category, job)
                                     ? 'bg-blue-600 text-white border-blue-600'
                                     : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
@@ -404,16 +460,16 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
           {/* Step 2: 경력 (다중 선택) */}
           {step === 2 && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">경력을 선택해주세요</h3>
-                <p className="text-sm text-gray-600 mb-4">여러 개 선택 가능합니다</p>
-                <div className="flex flex-wrap gap-2">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm">경력을 선택해주세요</h3>
+                <p className="text-xs text-gray-600 mb-2">여러 개 선택 가능합니다</p>
+                <div className="flex flex-wrap gap-1.5">
                   {CAREER_OPTIONS.map(option => (
                     <button
                       key={option.value}
                       onClick={() => toggle(selectedCareers, setSelectedCareers, option.value)}
-                      className={`px-4 py-2 rounded-full border transition ${
+                      className={`px-3 py-1.5 text-sm rounded-full border transition ${
                         selectedCareers.includes(option.value)
                           ? 'bg-blue-600 text-white border-blue-600'
                           : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
@@ -429,16 +485,16 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
           {/* Step 3: 지역 */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">희망 근무 지역을 선택해주세요</h3>
-                <p className="text-sm text-gray-600 mb-4">여러 개 선택 가능합니다</p>
-                <div className="flex flex-wrap gap-2">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm">희망 근무 지역을 선택해주세요</h3>
+                <p className="text-xs text-gray-600 mb-2">여러 개 선택 가능합니다</p>
+                <div className="flex flex-wrap gap-1.5">
                   {locationOptions.map(loc => (
                     <button
                       key={loc}
                       onClick={() => toggle(selectedLocations, setSelectedLocations, loc)}
-                      className={`px-4 py-2 rounded-full border transition ${
+                      className={`px-3 py-1.5 text-sm rounded-full border transition ${
                         selectedLocations.includes(loc)
                           ? 'bg-green-600 text-white border-green-600'
                           : 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
@@ -454,16 +510,16 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
           {/* Step 4: 고용형태 */}
           {step === 4 && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">희망 고용형태를 선택해주세요</h3>
-                <p className="text-sm text-gray-600 mb-4">여러 개 선택 가능합니다</p>
-                <div className="flex flex-wrap gap-2">
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm">희망 고용형태를 선택해주세요</h3>
+                <p className="text-xs text-gray-600 mb-2">여러 개 선택 가능합니다</p>
+                <div className="flex flex-wrap gap-1.5">
                   {employeeTypeOptions.map(type => (
                     <button
                       key={type}
                       onClick={() => toggle(selectedEmployeeTypes, setSelectedEmployeeTypes, type)}
-                      className={`px-4 py-2 rounded-full border transition ${
+                      className={`px-3 py-1.5 text-sm rounded-full border transition ${
                         selectedEmployeeTypes.includes(type)
                           ? 'bg-purple-600 text-white border-purple-600'
                           : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'
@@ -478,7 +534,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
           )}
 
           {/* 버튼 */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t">
+          <div className="flex items-center justify-between mt-4 pt-4 border-t">
             <div className="flex gap-2">
               {step > 1 && (
                 <Button
