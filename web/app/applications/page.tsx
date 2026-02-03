@@ -539,18 +539,21 @@ export default function ApplicationsPage() {
           onAddExternal={() => setShowExternalModal(true)}
         />
 
-        {/* 필터 */}
+        {/* 필터 - 항상 표시 */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
           <div className="flex flex-wrap gap-2">
             {filterButtons.map(({ key, label }) => {
               const count = statusCounts[key] || 0
-              if (key !== 'all' && count === 0) return null
+              // 데이터가 없어도 주요 필터는 항상 표시
+              const alwaysShow = ['all', 'pending', 'applied', 'document_pass', 'interviewing', 'accepted'].includes(key)
+              if (!alwaysShow && count === 0) return null
               return (
                 <Button
                   key={key}
                   size="sm"
                   variant={filter === key ? 'default' : 'outline'}
                   onClick={() => setFilter(key)}
+                  className={count === 0 ? 'opacity-50' : ''}
                 >
                   {label} ({count})
                 </Button>
@@ -561,20 +564,34 @@ export default function ApplicationsPage() {
 
         {/* 공고 목록 */}
         {processedApplications.length === 0 && pinnedApplications.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">
+          <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
+            <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {searchQuery
-                ? `"${searchQuery}" 검색 결과가 없습니다.`
+                ? `"${searchQuery}" 검색 결과가 없습니다`
                 : filter === 'all'
-                  ? '저장된 공고가 없습니다.'
-                  : '해당 상태의 공고가 없습니다.'}
+                  ? '아직 지원한 공고가 없어요'
+                  : '해당 상태의 공고가 없습니다'}
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+              채용공고 페이지에서 관심있는 공고를 찾아 지원하거나,<br/>
+              다른 사이트에서 지원한 내역을 직접 추가해보세요
             </p>
-            {!searchQuery && (
+            <div className="flex items-center justify-center gap-3">
               <Link href="/">
-                <Button className="mt-4">공고 둘러보기</Button>
+                <Button className="gap-2">
+                  <Briefcase className="w-4 h-4" />
+                  채용공고 보러가기
+                </Button>
               </Link>
-            )}
+              <Button
+                variant="outline"
+                onClick={() => setShowExternalModal(true)}
+                className="gap-2"
+              >
+                지원 내역 직접 추가
+              </Button>
+            </div>
           </div>
         ) : (
           <>

@@ -211,13 +211,16 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
     setSaving(true)
     try {
-      const { error } = await supabase.from('user_preferences').upsert({
-        user_id: user.id,
-        preferred_job_types: selectedJobs,
-        preferred_locations: selectedLocations.length > 0 ? selectedLocations : ['서울'],
-        career_level: selectedCareers.join(','),
-        work_style: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : ['정규직'],
-      })
+      const { error } = await supabase.from('user_preferences').upsert(
+        {
+          user_id: user.id,
+          preferred_job_types: selectedJobs,
+          preferred_locations: selectedLocations.length > 0 ? selectedLocations : ['서울'],
+          career_level: selectedCareers.join(','),
+          work_style: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : ['정규직'],
+        },
+        { onConflict: 'user_id' }
+      )
 
       if (error) {
         console.error('Supabase error:', error)
@@ -243,13 +246,16 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
     }
 
     try {
-      const { error } = await supabase.from('user_preferences').upsert({
-        user_id: user.id,
-        preferred_job_types: ['IT·개발 전체'],
-        preferred_locations: ['서울'],
-        career_level: '경력무관',
-        work_style: ['정규직'],
-      })
+      const { error } = await supabase.from('user_preferences').upsert(
+        {
+          user_id: user.id,
+          preferred_job_types: ['IT·개발 전체'],
+          preferred_locations: ['서울'],
+          career_level: '경력무관',
+          work_style: ['정규직'],
+        },
+        { onConflict: 'user_id' }
+      )
 
       if (error) {
         console.error('Supabase error:', error)
