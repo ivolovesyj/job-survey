@@ -588,7 +588,7 @@ export default function OnboardingPage() {
   const isLastFilter = step === filterSteps.length - 1
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
       <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* 헤더: 진행 표시 + SKIP 버튼 */}
         <div className="bg-white border-b px-4 py-3 flex-shrink-0">

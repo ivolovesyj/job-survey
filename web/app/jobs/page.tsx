@@ -128,7 +128,7 @@ export default function Home() {
   const offsetRef = useRef(0)
   const [filters, setFilters] = useState<UserFilters | null>(null)
   const [showFilterEdit, setShowFilterEdit] = useState(false)
-  const [filterOptions, setFilterOptions] = useState<{depth_ones: string[], regions: string[], employee_types: string[]} | null>(null)
+  const [filterOptions, setFilterOptions] = useState<{ depth_ones: string[], regions: string[], employee_types: string[] } | null>(null)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
@@ -148,30 +148,40 @@ export default function Home() {
 
   const checkOnboarding = async () => {
     try {
-      // user_preferences 확인
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user!.id)
+      // 먼저 user_profiles에서 onboarding_completed 확인
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('onboarding_completed')
+        .eq('id', user!.id)
         .single()
 
-      if (!data || !data.preferred_job_types?.length) {
+      if (!profile || !profile.onboarding_completed) {
         // 온보딩 미완료 → 온보딩 모달 표시
         setCheckingOnboarding(false)
         setShowOnboardingModal(true)
         return
       }
 
-      setFilters({
-        preferred_job_types: data.preferred_job_types || [],
-        preferred_locations: data.preferred_locations || [],
-        career_level: data.career_level || '경력무관',
-        work_style: data.work_style || [],
-      })
+      // user_preferences에서 필터 로드 (있으면)
+      const { data } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user!.id)
+        .single()
+
+      if (data) {
+        setFilters({
+          preferred_job_types: data.preferred_job_types || [],
+          preferred_locations: data.preferred_locations || [],
+          career_level: data.career_level || '경력무관',
+          work_style: data.work_style || [],
+        })
+      }
+
       setCheckingOnboarding(false)
       fetchJobs()
     } catch {
-      // user_preferences 없음 → 온보딩 모달 표시
+      // 에러 발생 시에도 온보딩 모달 표시
       setCheckingOnboarding(false)
       setShowOnboardingModal(true)
     }
