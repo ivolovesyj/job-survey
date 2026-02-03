@@ -17,32 +17,19 @@ export const metadata: Metadata = {
   title: "채용공고 관리의 모든 것, 지원함",
   description: "흩어진 채용 공고부터 합격 현황까지. 수동 입력 없이 한곳에서 체계적으로 관리하세요.",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
-  icons: {
-    icon: '/logo-final.png',
-    apple: '/logo-final.png',
-    shortcut: '/logo-final.png',
-  },
+  metadataBase: new URL('https://jiwonham.vercel.app'),
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    url: 'https://zighang.com',
+    url: 'https://jiwonham.vercel.app',
     siteName: '지원함',
     title: '채용공고 관리의 모든 것, 지원함',
     description: '흩어진 채용 공고부터 합격 현황까지. 수동 입력 없이 한곳에서 체계적으로 관리하세요.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: '지원함 - 채용공고 관리 서비스',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: '채용공고 관리의 모든 것, 지원함',
     description: '흩어진 채용 공고부터 합격 현황까지. 수동 입력 없이 한곳에서 체계적으로 관리하세요.',
-    images: ['/og-image.png'],
   },
 };
 
