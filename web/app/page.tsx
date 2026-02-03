@@ -677,21 +677,21 @@ export default function Home() {
 
       {/* 비로그인 사용자 안내 배너 */}
       {!user && (
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 border-b px-4 py-6">
-          <div className="max-w-md mx-auto text-center space-y-3">
-            <h2 className="text-lg font-bold text-white">
-              📝 매일 맞는 공고 받고, 지원 내역 한눈에 관리하세요
-            </h2>
-            <p className="text-sm text-blue-100">
-              여러 플랫폼에 흩어진 지원 내역을 노션 대신 여기서 체계적으로 관리하세요
-            </p>
-            <div className="flex gap-2 justify-center pt-2">
-              <Link href="/login">
-                <button className="px-4 py-2 bg-white text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition text-sm">
-                  지금 시작하기
-                </button>
-              </Link>
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 border-b px-4 py-3">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+            <div className="flex-1 text-left">
+              <h2 className="text-base font-bold text-white leading-tight">
+                지원한 곳 헷갈릴 땐? 지원함
+              </h2>
+              <p className="text-xs text-blue-100 mt-0.5">
+                메모장·노션은 이제 끝. 수동 입력 없이 자동으로 관리하세요.
+              </p>
             </div>
+            <Link href="/login">
+              <button className="px-3 py-1.5 bg-white text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition text-xs whitespace-nowrap">
+                시작하기
+              </button>
+            </Link>
           </div>
         </div>
       )}
