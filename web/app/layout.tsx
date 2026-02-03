@@ -18,6 +18,14 @@ export const metadata: Metadata = {
   description: "흩어진 채용 공고부터 합격 현황까지. 수동 입력 없이 한곳에서 체계적으로 관리하세요.",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   metadataBase: new URL('https://jiwonham.vercel.app'),
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
+      { url: '/favicon.png', sizes: '687x687', type: 'image/png' },
+    ],
+    apple: '/favicon.png',
+    shortcut: '/favicon.ico',
+  },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
