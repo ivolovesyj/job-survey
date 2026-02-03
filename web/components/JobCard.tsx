@@ -53,11 +53,6 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
               <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
               <span className="text-sm font-semibold">적합도 {matchPercent}%</span>
             </div>
-            {job.is_new && (
-              <span className="inline-flex items-center px-2 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
-                🆕 NEW
-              </span>
-            )}
             {deadline && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-full border border-gray-200">
                 <Calendar className="w-3 h-3" />
@@ -101,39 +96,29 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
             </div>
           </div>
 
-          {/* 직군 태그 */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {tags.slice(0, 4).map((tag, i) => (
-                <span key={i} className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md border border-purple-200">
-                  {tag}
-                </span>
-              ))}
-              {job.employee_types?.map((type, i) => (
-                <span key={`et-${i}`} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md border border-blue-200">
-                  {type}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* 추천 포인트 */}
-          {job.reasons && job.reasons.length > 0 && (
-            <div className="pt-1">
-              <div className="flex flex-wrap gap-1.5">
-                {job.reasons.slice(0, 3).map((reason, i) => (
-                  <span key={i} className="text-xs px-2.5 py-1 bg-gray-50 text-gray-700 rounded-md border border-gray-200">
-                    {reason}
-                  </span>
-                ))}
-                {job.reasons.length > 3 && (
-                  <span className="text-xs px-2.5 py-1 bg-gray-50 text-gray-500 rounded-md border border-gray-200">
-                    +{job.reasons.length - 3}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+          {/* 모든 태그 한 줄로 통합 */}
+          <div className="flex flex-wrap gap-1.5">
+            {tags.slice(0, 3).map((tag, i) => (
+              <span key={i} className="text-xs px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md border border-purple-200">
+                {tag}
+              </span>
+            ))}
+            {job.employee_types?.slice(0, 1).map((type, i) => (
+              <span key={`et-${i}`} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md border border-blue-200">
+                {type}
+              </span>
+            ))}
+            {job.reasons?.slice(0, 2).map((reason, i) => (
+              <span key={`r-${i}`} className="text-xs px-2 py-0.5 bg-gray-50 text-gray-600 rounded-md border border-gray-200">
+                ✓ {reason}
+              </span>
+            ))}
+            {job.is_new && (
+              <span className="text-xs px-2 py-0.5 bg-green-50 text-green-600 rounded-md border border-green-200">
+                🆕 신규
+              </span>
+            )}
+          </div>
 
           {/* 공고보기 버튼 */}
           <div className="pt-3">
@@ -150,60 +135,60 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
           </div>
 
           {isExpanded && (
-            <div className="pt-4 border-t border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2 max-h-[40vh] overflow-y-auto">
+            <div className="pt-4 border-t border-gray-100 space-y-3 animate-in fade-in slide-in-from-top-2 max-h-[40vh] overflow-y-auto">
               {job.detail?.intro && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">📋 회사 소개</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.intro}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">📋 회사 소개</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.intro.trim()}</p>
                 </div>
               )}
 
               {job.detail?.main_tasks && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">💼 주요 업무</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.main_tasks}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">💼 주요 업무</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.main_tasks.trim()}</p>
                 </div>
               )}
 
               {job.detail?.requirements && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">✅ 자격 요건</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.requirements}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">✅ 자격 요건</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.requirements.trim()}</p>
                 </div>
               )}
 
               {job.detail?.preferred_points && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">⭐ 우대 사항</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.preferred_points}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">⭐ 우대 사항</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.preferred_points.trim()}</p>
                 </div>
               )}
 
               {job.detail?.benefits && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">🎁 복지 혜택</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.benefits}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">🎁 복지 혜택</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.benefits.trim()}</p>
                 </div>
               )}
 
               {job.detail?.work_conditions && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">🏢 근무 조건</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.work_conditions}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">🏢 근무 조건</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.work_conditions.trim()}</p>
                 </div>
               )}
 
               {/* 파싱된 필드가 모두 비어있지만 raw_content가 있으면 전체 표시 */}
               {job.detail?.raw_content && !job.detail?.intro && !job.detail?.main_tasks && !job.detail?.requirements && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">📄 상세 정보</div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.raw_content}</p>
+                  <div className="text-sm font-bold text-gray-900 mb-1">📄 상세 정보</div>
+                  <p className="text-sm text-gray-700 leading-snug whitespace-pre-wrap">{job.detail.raw_content.trim()}</p>
                 </div>
               )}
 
               {job.warnings && job.warnings.length > 0 && (
                 <div>
-                  <div className="text-sm font-bold text-gray-900 mb-2">⚠️ 주의사항</div>
+                  <div className="text-sm font-bold text-gray-900 mb-1">⚠️ 주의사항</div>
                   <div className="flex flex-wrap gap-1.5">
                     {job.warnings.map((warning, i) => (
                       <span key={i} className="text-xs px-2.5 py-1 bg-red-50 text-red-700 rounded-md border border-red-200">

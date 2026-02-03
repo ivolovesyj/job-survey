@@ -110,15 +110,76 @@ const JOB_CATEGORIES: Record<string, string[]> = {
 const locationOptions = ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '세종', '강원', '충청', '전라', '경상', '제주', '원격근무']
 const employeeTypeOptions = ['정규직', '계약직', '인턴', '프리랜서']
 
+// localStorage 키
+const ONBOARDING_STATE_KEY = 'onboarding_state'
+
+interface OnboardingState {
+  step: number
+  selectedJobs: string[]
+  selectedCareers: string[]
+  selectedLocations: string[]
+  selectedEmployeeTypes: string[]
+  selectedCategory: string | null
+}
+
+function loadOnboardingState(): OnboardingState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const saved = localStorage.getItem(ONBOARDING_STATE_KEY)
+    return saved ? JSON.parse(saved) : null
+  } catch {
+    return null
+  }
+}
+
+function saveOnboardingState(state: OnboardingState) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(state))
+  } catch {
+    // ignore
+  }
+}
+
+function clearOnboardingState() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(ONBOARDING_STATE_KEY)
+  } catch {
+    // ignore
+  }
+}
+
 export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
   const { user } = useAuth()
-  const [step, setStep] = useState(1)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [selectedJobs, setSelectedJobs] = useState<string[]>([])
-  const [selectedCareer, setSelectedCareer] = useState('경력무관')
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([])
-  const [selectedEmployeeTypes, setSelectedEmployeeTypes] = useState<string[]>([])
+
+  // 초기값을 localStorage에서 불러오기
+  const savedState = loadOnboardingState()
+
+  const [step, setStep] = useState(savedState?.step || 1)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(savedState?.selectedCategory || null)
+  const [selectedJobs, setSelectedJobs] = useState<string[]>(savedState?.selectedJobs || [])
+  const [selectedCareers, setSelectedCareers] = useState<string[]>(savedState?.selectedCareers || ['경력무관'])
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(savedState?.selectedLocations || [])
+  const [selectedEmployeeTypes, setSelectedEmployeeTypes] = useState<string[]>(savedState?.selectedEmployeeTypes || [])
   const [saving, setSaving] = useState(false)
+
+  // 상태 변경시 localStorage에 저장
+  const updateState = () => {
+    saveOnboardingState({
+      step,
+      selectedJobs,
+      selectedCareers,
+      selectedLocations,
+      selectedEmployeeTypes,
+      selectedCategory,
+    })
+  }
+
+  // 상태 변경 감지
+  useState(() => {
+    updateState()
+  })
 
   const toggle = (list: string[], setList: (v: string[]) => void, item: string) => {
     setList(list.includes(item) ? list.filter(i => i !== item) : [...list, item])
@@ -139,42 +200,82 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   }
 
   const handleSave = async () => {
-    if (!user || selectedJobs.length === 0) return
+    if (!user) {
+      alert('로그인이 필요합니다.')
+      return
+    }
+    if (selectedJobs.length === 0) {
+      alert('직무를 선택해주세요.')
+      return
+    }
 
     setSaving(true)
     try {
-      await supabase.from('user_preferences').upsert({
+      const { error } = await supabase.from('user_preferences').upsert({
         user_id: user.id,
         preferred_job_types: selectedJobs,
         preferred_locations: selectedLocations.length > 0 ? selectedLocations : ['서울'],
-        career_level: selectedCareer,
+        career_level: selectedCareers.join(','),
         work_style: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : ['정규직'],
       })
 
+      if (error) {
+        console.error('Supabase error:', error)
+        alert(`저장 실패: ${error.message}`)
+        return
+      }
+
+      // 저장 성공시 localStorage 초기화
+      clearOnboardingState()
       onComplete()
     } catch (error) {
       console.error('Failed to save preferences:', error)
-      alert('저장 실패')
+      alert('저장 실패: 네트워크 오류')
     } finally {
       setSaving(false)
     }
   }
 
   const handleSkip = async () => {
-    if (!user) return
+    if (!user) {
+      alert('로그인이 필요합니다.')
+      return
+    }
 
     try {
-      await supabase.from('user_preferences').upsert({
+      const { error } = await supabase.from('user_preferences').upsert({
         user_id: user.id,
-        preferred_job_types: ['개발 전체'],
+        preferred_job_types: ['IT·개발 전체'],
         preferred_locations: ['서울'],
         career_level: '경력무관',
         work_style: ['정규직'],
       })
+
+      if (error) {
+        console.error('Supabase error:', error)
+        return
+      }
+
+      clearOnboardingState()
       onComplete()
     } catch (error) {
       console.error('Failed to save default preferences:', error)
     }
+  }
+
+  // step 변경시 저장
+  const handleStepChange = (newStep: number) => {
+    setStep(newStep)
+    setTimeout(() => {
+      saveOnboardingState({
+        step: newStep,
+        selectedJobs,
+        selectedCareers,
+        selectedLocations,
+        selectedEmployeeTypes,
+        selectedCategory,
+      })
+    }, 0)
   }
 
   if (!isOpen) return null
@@ -272,18 +373,19 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
             </div>
           )}
 
-          {/* Step 2: 경력 */}
+          {/* Step 2: 경력 (다중 선택) */}
           {step === 2 && (
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">경력을 선택해주세요</h3>
+                <p className="text-sm text-gray-600 mb-4">여러 개 선택 가능합니다</p>
                 <div className="flex flex-wrap gap-2">
                   {CAREER_OPTIONS.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => setSelectedCareer(option.value)}
+                      onClick={() => toggle(selectedCareers, setSelectedCareers, option.value)}
                       className={`px-4 py-2 rounded-full border transition ${
-                        selectedCareer === option.value
+                        selectedCareers.includes(option.value)
                           ? 'bg-blue-600 text-white border-blue-600'
                           : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
                       }`}
@@ -353,7 +455,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setStep(step - 1)}
+                  onClick={() => handleStepChange(step - 1)}
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   이전
@@ -371,7 +473,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
 
             {step < 4 ? (
               <Button
-                onClick={() => setStep(step + 1)}
+                onClick={() => handleStepChange(step + 1)}
                 disabled={step === 1 && selectedJobs.length === 0}
               >
                 다음
