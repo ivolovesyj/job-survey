@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import Image from 'next/image'
 import Link from 'next/link'
+import { LoginPromptModal } from '@/components/LoginPromptModal'
 
 const CAREER_OPTIONS = [
   { value: '신입', label: '신입' },
@@ -113,6 +114,7 @@ export default function Home() {
   const [showFilterEdit, setShowFilterEdit] = useState(false)
   const [filterOptions, setFilterOptions] = useState<{depth_ones: string[], regions: string[], employee_types: string[]} | null>(null)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   // 로그인된 경우에만 온보딩 체크
   useEffect(() => {
@@ -335,9 +337,7 @@ export default function Home() {
 
     // 비로그인 사용자: 로그인 유도
     if (!user) {
-      if (confirm('로그인하면 공고를 저장하고 AI가 맞춤 추천해드려요!\n지금 로그인하시겠어요?')) {
-        router.push('/login')
-      }
+      setShowLoginModal(true)
       return
     }
 
@@ -659,11 +659,21 @@ export default function Home() {
 
       {/* 비로그인 사용자 안내 배너 */}
       {!user && (
-        <div className="bg-blue-50 border-b border-blue-100 px-4 py-3">
-          <div className="max-w-md mx-auto text-center">
-            <p className="text-sm text-blue-800">
-              💡 로그인하면 <strong>AI 맞춤 추천</strong>과 <strong>공고 저장</strong>을 이용할 수 있어요!
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 border-b px-4 py-6">
+          <div className="max-w-md mx-auto text-center space-y-3">
+            <h2 className="text-lg font-bold text-white">
+              📝 매일 맞는 공고 받고, 지원 내역 한눈에 관리하세요
+            </h2>
+            <p className="text-sm text-blue-100">
+              여러 플랫폼에 흩어진 지원 내역을 노션 대신 여기서 체계적으로 관리하세요
             </p>
+            <div className="flex gap-2 justify-center pt-2">
+              <Link href="/login">
+                <button className="px-4 py-2 bg-white text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition text-sm">
+                  지금 시작하기
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -693,10 +703,11 @@ export default function Home() {
         </div>
       </main>
 
-      {/* 안내 텍스트 */}
-      <div className="text-center pb-4 text-xs text-gray-400">
-        버튼을 눌러 선택해주세요
-      </div>
+      {/* 로그인 모달 */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </div>
   )
 }
