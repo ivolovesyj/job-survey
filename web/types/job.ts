@@ -5,6 +5,7 @@ export interface JobDetail {
   preferred_points?: string
   benefits?: string
   work_conditions?: string
+  raw_content?: string
 }
 
 export interface Job {

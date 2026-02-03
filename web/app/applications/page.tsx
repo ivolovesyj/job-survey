@@ -207,6 +207,28 @@ export default function ApplicationsPage() {
     }
   }
 
+  const handleUpdateDeadline = async (savedJobId: string, deadline: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_jobs')
+        .update({ deadline })
+        .eq('id', savedJobId)
+
+      if (error) throw error
+
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.saved_job.id === savedJobId
+            ? { ...app, saved_job: { ...app.saved_job, deadline } }
+            : app
+        )
+      )
+    } catch (error) {
+      console.error('Failed to update deadline:', error)
+      alert('마감일 저장에 실패했습니다.')
+    }
+  }
+
   const handleDelete = async (applicationId: string, savedJobId: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
 
@@ -565,6 +587,7 @@ export default function ApplicationsPage() {
               onStatusChange={handleStatusChange}
               onUpdateNotes={handleUpdateNotes}
               onUpdateDocuments={handleUpdateDocuments}
+              onUpdateDeadline={handleUpdateDeadline}
               onDelete={handleDelete}
               onTogglePin={handleTogglePin}
             />
@@ -587,6 +610,7 @@ export default function ApplicationsPage() {
                       onStatusChange={handleStatusChange}
                       onUpdateNotes={handleUpdateNotes}
                       onUpdateDocuments={handleUpdateDocuments}
+                      onUpdateDeadline={handleUpdateDeadline}
                       onDelete={handleDelete}
                       isPinned={false}
                       onTogglePin={handleTogglePin}
@@ -599,6 +623,7 @@ export default function ApplicationsPage() {
                       onStatusChange={handleStatusChange}
                       onUpdateNotes={handleUpdateNotes}
                       onUpdateDocuments={handleUpdateDocuments}
+                      onUpdateDeadline={handleUpdateDeadline}
                       onDelete={handleDelete}
                       isPinned={false}
                       onTogglePin={handleTogglePin}

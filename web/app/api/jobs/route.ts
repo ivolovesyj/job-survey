@@ -15,7 +15,7 @@ interface UserPreferences {
   preferred_company_sizes?: string[]
   preferred_industries?: string[]
   min_salary?: number
-  work_style?: string[]
+  work_style?: string[]  // 고용형태 필터: 정규직, 계약직, 인턴 등
 }
 
 interface KeywordWeight {
@@ -62,7 +62,7 @@ function scoreJob(
   const reasons: string[] = []
   const warnings: string[] = []
 
-  const jobText = `${job.company} ${job.title} ${job.depth_ones?.join(' ') || ''} ${job.depth_twos?.join(' ') || ''} ${job.keywords?.join(' ') || ''} ${job.detail?.main_tasks || ''} ${job.detail?.requirements || ''}`.toLowerCase()
+  const jobText = `${job.company} ${job.title} ${job.depth_ones?.join(' ') || ''} ${job.depth_twos?.join(' ') || ''} ${job.keywords?.join(' ') || ''} ${job.detail?.raw_content || ''} ${job.detail?.main_tasks || ''} ${job.detail?.requirements || ''}`.toLowerCase()
 
   if (!prefs) {
     return { score: 50, reasons: ['기본 추천'], warnings: [] }
@@ -107,6 +107,15 @@ function scoreJob(
         score -= 20
         warnings.push(`⚠️ 경력 ${job.career_min}년 이상`)
       }
+    }
+  }
+
+  // 3.5 고용형태 매칭
+  if (prefs.work_style?.length && job.employee_types?.length) {
+    const match = prefs.work_style.some(ws => job.employee_types!.includes(ws))
+    if (match) {
+      score += 5
+      reasons.push('✓ 희망 고용형태')
     }
   }
 
@@ -160,16 +169,88 @@ export async function GET(request: Request) {
 
     // 인증 헤더에서 토큰 추출
     const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+
+    // 토큰이 없으면 비로그인 사용자: 기본 공고 제공
+    if (!token) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+      const { data: jobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('is_active', true)
+        .order('crawled_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (jobsError) {
+        console.error('Jobs query error:', jobsError)
+        return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 })
+      }
+
+      if (!jobs || jobs.length === 0) {
+        return NextResponse.json({
+          jobs: [],
+          total: 0,
+          limit,
+          offset,
+          message: 'No jobs available. Please run the crawler first.',
+        })
+      }
+
+      // 비로그인 사용자: 최신순 공고, 기본 점수 50점
+      const now = Date.now()
+      const basicJobs = jobs.map((job: JobRow) => {
+        const isNew = (now - new Date(job.crawled_at).getTime()) < 24 * 60 * 60 * 1000
+
+        return {
+          id: job.id,
+          company: job.company,
+          company_image: job.company_image,
+          title: job.title,
+          location: job.location || '위치 미정',
+          score: 50,
+          reason: isNew ? '🆕 신규 공고' : '최신 공고',
+          reasons: isNew ? ['🆕 신규'] : ['최신 공고'],
+          warnings: [],
+          link: `https://zighang.com/recruitment/${job.id}`,
+          source: job.source,
+          crawledAt: job.crawled_at,
+          detail: job.detail,
+          depth_ones: job.depth_ones,
+          depth_twos: job.depth_twos,
+          keywords: job.keywords,
+          career_min: job.career_min,
+          career_max: job.career_max,
+          employee_types: job.employee_types,
+          deadline_type: job.deadline_type,
+          end_date: job.end_date,
+          is_new: isNew,
+        }
+      })
+
+      return NextResponse.json({
+        jobs: basicJobs,
+        total: basicJobs.length,
+        limit,
+        offset,
+        hasMore: jobs.length === limit, // 정확한 hasMore는 알 수 없지만 추정
+      })
+    }
+
+    // === 로그인 사용자: 맞춤형 추천 ===
+
+    // 토큰을 포함한 supabase 클라이언트 생성 (RLS 통과용)
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
-        headers: authHeader ? { authorization: authHeader } : {},
+        headers: { Authorization: `Bearer ${token}` },
       },
     })
 
-    // 현재 사용자 확인
-    const { data: { user } } = await supabase.auth.getUser()
+    // 토큰으로 직접 유저 확인
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
 
-    if (!user) {
+    if (!user || userError) {
+      console.log('[Jobs API] Auth failed:', userError?.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

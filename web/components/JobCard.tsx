@@ -150,7 +150,7 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
           </div>
 
           {isExpanded && (
-            <div className="pt-4 border-t border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2">
+            <div className="pt-4 border-t border-gray-100 space-y-4 animate-in fade-in slide-in-from-top-2 max-h-[40vh] overflow-y-auto">
               {job.detail?.intro && (
                 <div>
                   <div className="text-sm font-bold text-gray-900 mb-2">📋 회사 소개</div>
@@ -183,6 +183,21 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
                 <div>
                   <div className="text-sm font-bold text-gray-900 mb-2">🎁 복지 혜택</div>
                   <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.benefits}</p>
+                </div>
+              )}
+
+              {job.detail?.work_conditions && (
+                <div>
+                  <div className="text-sm font-bold text-gray-900 mb-2">🏢 근무 조건</div>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.work_conditions}</p>
+                </div>
+              )}
+
+              {/* 파싱된 필드가 모두 비어있지만 raw_content가 있으면 전체 표시 */}
+              {job.detail?.raw_content && !job.detail?.intro && !job.detail?.main_tasks && !job.detail?.requirements && (
+                <div>
+                  <div className="text-sm font-bold text-gray-900 mb-2">📄 상세 정보</div>
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{job.detail.raw_content}</p>
                 </div>
               )}
 

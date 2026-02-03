@@ -71,6 +71,7 @@ interface PinnedSectionProps {
   onStatusChange: (id: string, newStatus: ApplicationStatus) => void
   onUpdateNotes: (id: string, notes: string) => void
   onUpdateDocuments: (id: string, documents: RequiredDocuments) => void
+  onUpdateDeadline: (savedJobId: string, deadline: string) => void
   onDelete: (applicationId: string, savedJobId: string) => void
   onTogglePin: (savedJobId: string) => void
 }
@@ -83,6 +84,7 @@ export function PinnedSection({
   onStatusChange,
   onUpdateNotes,
   onUpdateDocuments,
+  onUpdateDeadline,
   onDelete,
   onTogglePin,
 }: PinnedSectionProps) {
@@ -129,6 +131,7 @@ export function PinnedSection({
                     onStatusChange={onStatusChange}
                     onUpdateNotes={onUpdateNotes}
                     onUpdateDocuments={onUpdateDocuments}
+                    onUpdateDeadline={onUpdateDeadline}
                     onDelete={onDelete}
                     isPinned={true}
                     onTogglePin={onTogglePin}
@@ -139,6 +142,7 @@ export function PinnedSection({
                     onStatusChange={onStatusChange}
                     onUpdateNotes={onUpdateNotes}
                     onUpdateDocuments={onUpdateDocuments}
+                    onUpdateDeadline={onUpdateDeadline}
                     onDelete={onDelete}
                     isPinned={true}
                     onTogglePin={onTogglePin}

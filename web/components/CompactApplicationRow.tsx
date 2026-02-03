@@ -12,6 +12,7 @@ interface CompactApplicationRowProps {
   onStatusChange: (id: string, newStatus: ApplicationStatus) => void
   onUpdateNotes: (id: string, notes: string) => void
   onUpdateDocuments: (id: string, documents: RequiredDocuments) => void
+  onUpdateDeadline: (savedJobId: string, deadline: string) => void
   onDelete: (applicationId: string, savedJobId: string) => void
   isPinned?: boolean
   onTogglePin?: (savedJobId: string) => void
@@ -22,6 +23,7 @@ export function CompactApplicationRow({
   onStatusChange,
   onUpdateNotes,
   onUpdateDocuments,
+  onUpdateDeadline,
   onDelete,
   isPinned,
   onTogglePin,
@@ -89,6 +91,7 @@ export function CompactApplicationRow({
             onStatusChange={onStatusChange}
             onUpdateNotes={onUpdateNotes}
             onUpdateDocuments={onUpdateDocuments}
+            onUpdateDeadline={onUpdateDeadline}
             onDelete={onDelete}
             isPinned={isPinned}
             onTogglePin={onTogglePin}

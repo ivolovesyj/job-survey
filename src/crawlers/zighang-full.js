@@ -131,18 +131,19 @@ function prosemirrorToText(doc) {
  * 평문 텍스트를 섹션 헤딩 기준으로 detail 필드로 분리
  */
 function parseDetailSections(text) {
-  if (!text) return { intro: '', main_tasks: '', requirements: '', preferred_points: '', benefits: '', work_conditions: '' };
+  const empty = { intro: '', main_tasks: '', requirements: '', preferred_points: '', benefits: '', work_conditions: '', raw_content: '' };
+  if (!text) return empty;
 
   const sectionMap = {
-    main_tasks: /^(담당업무|주요업무|업무\s*내용|직무\s*내용|하는\s*일|업무\s*소개|업무\s*설명)/,
-    requirements: /^(자격요건|자격\s*조건|지원\s*자격|필수\s*요건|필수\s*조건|응모\s*자격|채용\s*조건)/,
-    preferred_points: /^(우대사항|우대\s*조건|우대\s*요건|이런\s*분.*우대|이런\s*분.*환영)/,
-    benefits: /^(복리후생|혜택|복지|근무\s*혜택|직원\s*혜택|사내\s*복지)/,
-    work_conditions: /^(근무환경|근무\s*조건|근무\s*시간|근무\s*형태|급여|연봉|근무환경\/급여|처우\s*조건)/,
+    main_tasks: /^(담당업무|주요업무|업무\s*내용|직무\s*내용|하는\s*일|업무\s*소개|업무\s*설명|모집\s*정보|모집\s*분야)/,
+    requirements: /^(자격요건|자격\s*조건|지원\s*자격|필수\s*요건|필수\s*조건|응모\s*자격|채용\s*조건|필요\s*역량|지원\s*조건)/,
+    preferred_points: /^(우대사항|우대\s*조건|우대\s*요건|이런\s*분.*우대|이런\s*분.*환영|우대\s*역량)/,
+    benefits: /^(복리후생|혜택|복지|근무\s*혜택|직원\s*혜택|사내\s*복지|복지\s*및|보상\s*및)/,
+    work_conditions: /^(근무환경|근무\s*조건|근무\s*시간|근무\s*형태|급여|연봉|근무환경\/급여|처우\s*조건|모집\s*인원|모집\s*조건|근무\s*지역|근무\s*장소|근무\s*일시|근무\s*요일)/,
   };
 
   const lines = text.split('\n');
-  const result = { intro: '', main_tasks: '', requirements: '', preferred_points: '', benefits: '', work_conditions: '' };
+  const result = { intro: '', main_tasks: '', requirements: '', preferred_points: '', benefits: '', work_conditions: '', raw_content: text };
   let currentSection = 'intro';
 
   for (const line of lines) {
@@ -162,20 +163,21 @@ function parseDetailSections(text) {
     }
 
     // 제출서류, 전형절차, 접수방법, 마감기한 등 기타 섹션은 work_conditions에 포함
-    if (!matched && /^(제출서류|전형절차|접수방법|마감기한|채용\s*절차|지원\s*방법|서류\s*접수)/.test(trimmed)) {
+    if (!matched && /^(제출서류|전형절차|접수방법|마감기한|채용\s*절차|지원\s*방법|서류\s*접수|접수\s*기간|전형\s*방법)/.test(trimmed)) {
       currentSection = 'work_conditions';
       matched = true;
     }
 
-    if (!matched) {
-      result[currentSection] += trimmed + '\n';
-    }
+    // 섹션 헤더 라인도 내용에 포함 (헤더 텍스트 뒤에 추가 정보가 있을 수 있으므로)
+    result[currentSection] += trimmed + '\n';
   }
 
   // trim all
   for (const key of Object.keys(result)) {
+    if (key === 'raw_content') continue;
     result[key] = result[key].replace(/\n{3,}/g, '\n\n').trim();
   }
+  result.raw_content = result.raw_content.replace(/\n{3,}/g, '\n\n').trim();
 
   return result;
 }

@@ -10,3 +10,4 @@ data/*.json
 web/.next/
 web/.env.local
 web/dev.log
+survey/

@@ -12,6 +12,7 @@ interface ApplicationCardProps {
   onStatusChange: (id: string, newStatus: ApplicationStatus) => void
   onUpdateNotes: (id: string, notes: string) => void
   onUpdateDocuments: (id: string, documents: RequiredDocuments) => void
+  onUpdateDeadline: (savedJobId: string, deadline: string) => void
   onDelete: (applicationId: string, savedJobId: string) => void
   isPinned?: boolean
   onTogglePin?: (savedJobId: string) => void
@@ -22,6 +23,7 @@ export function ApplicationCard({
   onStatusChange,
   onUpdateNotes,
   onUpdateDocuments,
+  onUpdateDeadline,
   onDelete,
   isPinned,
   onTogglePin,
@@ -73,6 +75,21 @@ export function ApplicationCard({
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span className="text-xs text-gray-500">{saved_job.location}</span>
             <DeadlineBadge deadline={saved_job.deadline} />
+            {!saved_job.deadline && (
+              <label className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-500 border border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors">
+                <Calendar className="w-3 h-3" />
+                <span>마감일 설정</span>
+                <input
+                  type="date"
+                  className="sr-only"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      onUpdateDeadline(saved_job.id, e.target.value)
+                    }
+                  }}
+                />
+              </label>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
