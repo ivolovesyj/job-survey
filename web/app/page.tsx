@@ -16,12 +16,12 @@ export default function ApplicationsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login')
-    } else if (user) {
+    if (!authLoading && user) {
       fetchApplications()
+    } else if (!authLoading && !user) {
+      setLoading(false)
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading])
 
   const fetchApplications = async () => {
     try {
@@ -73,8 +73,34 @@ export default function ApplicationsPage() {
             </div>
           </div>
 
-          {applications.length === 0 ? (
-            // 빈 상태
+          {!user ? (
+            // 비로그인 상태
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-24 h-24 mb-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                <Briefcase className="w-12 h-12 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                지원 관리를 시작하세요
+              </h3>
+              <p className="text-gray-600 mb-8 max-w-md">
+                채용 공고를 둘러보거나, 다른 사이트에서 지원한 내역을 추가해보세요
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/jobs">
+                  <Button size="lg" className="flex items-center gap-2">
+                    <Search className="w-5 h-5" />
+                    채용공고 보러가기
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="flex items-center gap-2">
+                    지원 내역 추가하기
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : applications.length === 0 ? (
+            // 로그인했지만 지원 내역 없음
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-24 h-24 mb-6 bg-gray-100 rounded-full flex items-center justify-center">
                 <Briefcase className="w-12 h-12 text-gray-400" />
@@ -82,15 +108,21 @@ export default function ApplicationsPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 아직 지원한 공고가 없어요
               </h3>
-              <p className="text-gray-600 mb-6 max-w-md">
-                채용공고 페이지에서 관심있는 공고를 찾아 지원해보세요!
+              <p className="text-gray-600 mb-8 max-w-md">
+                채용공고 페이지에서 관심있는 공고를 찾아 지원하거나,<br />
+                다른 사이트에서 지원한 내역을 직접 추가해보세요
               </p>
-              <Link href="/jobs">
-                <Button size="lg" className="flex items-center gap-2">
-                  <Search className="w-5 h-5" />
-                  채용공고 보러가기
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/jobs">
+                  <Button size="lg" className="flex items-center gap-2">
+                    <Search className="w-5 h-5" />
+                    채용공고 보러가기
+                  </Button>
+                </Link>
+                <Button size="lg" variant="outline" className="flex items-center gap-2">
+                  지원 내역 직접 추가
                 </Button>
-              </Link>
+              </div>
             </div>
           ) : (
             // 지원 목록
