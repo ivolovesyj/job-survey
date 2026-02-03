@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "취업하개 - 맞춤형 채용공고 추천",
-  description: "AI가 분석한 나에게 딱 맞는 채용공고를 매일 추천받아보세요",
+  title: "지원함 - 모든 지원 내역을 한곳에서",
+  description: "여러 플랫폼에 흩어진 지원 내역을 체계적으로 관리하고, AI 맞춤 채용공고를 매일 받아보세요",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
 };
 

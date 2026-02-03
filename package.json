@@ -1,7 +1,7 @@
 {
-  "name": "job-alert",
+  "name": "jiwonbox",
   "version": "1.0.0",
-  "description": "마케팅 신입 채용공고 수집 및 카카오톡 알림",
+  "description": "지원함 - 모든 지원 내역을 한곳에서 관리하는 통합 플랫폼",
   "main": "src/index.js",
   "type": "module",
   "scripts": {

@@ -480,15 +480,11 @@ export default function ApplicationsPage() {
                 </Button>
               </Link>
               <div className="flex items-center gap-2">
-                <Image
-                  src="/취업하개.png"
-                  alt="취업하개"
-                  width={32}
-                  height={32}
-                  className="rounded-full w-8 h-8"
-                />
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">📦</span>
+                </div>
                 <h1 className="text-lg md:text-xl font-bold text-gray-900">
-                  지원 관리
+                  지원함 - 지원 관리
                 </h1>
               </div>
             </div>

@@ -41,16 +41,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <Image
-            src="/취업하개.png"
-            alt="취업하개"
-            width={120}
-            height={120}
-            className="mx-auto rounded-full"
-          />
-          <h1 className="mt-6 text-3xl font-bold text-gray-900">취업하개</h1>
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
+            <span className="text-white font-bold text-5xl">📦</span>
+          </div>
+          <h1 className="mt-6 text-3xl font-bold text-gray-900">지원함</h1>
           <p className="mt-2 text-gray-600">
-            AI가 추천하는 맞춤형 채용공고
+            모든 지원 내역을 한곳에서 체계적으로
           </p>
         </div>
 

@@ -531,14 +531,10 @@ export default function Home() {
       <header className="bg-white border-b px-4 py-3 md:py-4 sticky top-0 z-50">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image
-              src="/취업하개.png"
-              alt="취업하개"
-              width={32}
-              height={32}
-              className="rounded-full w-8 h-8"
-            />
-            <h1 className="text-lg md:text-xl font-bold text-gray-900">취업하개</h1>
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">📦</span>
+            </div>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900">지원함</h1>
           </div>
           <div className="flex items-center gap-2">
             {!user ? (
