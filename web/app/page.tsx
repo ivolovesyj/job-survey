@@ -63,10 +63,16 @@ export default function ApplicationsPage() {
   const initialLoadStartRef = useRef<number>(Date.now())
   const [minLoadingComplete, setMinLoadingComplete] = useState(false)
   const [showHeroBanner, setShowHeroBanner] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
-  // 최소 로딩 시간 보장 (1.7초)
+  // 클라이언트 마운트 확인
   useEffect(() => {
-    const minLoadingTime = 1700
+    setMounted(true)
+  }, [])
+
+  // 최소 로딩 시간 보장 (1초)
+  useEffect(() => {
+    const minLoadingTime = 1000
     const elapsed = Date.now() - initialLoadStartRef.current
     const remaining = Math.max(0, minLoadingTime - elapsed)
 
@@ -82,7 +88,6 @@ export default function ApplicationsPage() {
       fetchApplications()
     } else if (!authLoading && !user) {
       setLoading(false)
-      console.log('Non-logged-in user detected, loading set to false')
     }
   }, [user, authLoading])
 
@@ -110,8 +115,7 @@ export default function ApplicationsPage() {
     }
   }
 
-  if (!minLoadingComplete || authLoading || loading) {
-    console.log('Loading screen shown:', { minLoadingComplete, authLoading, loading, user: !!user })
+  if (!minLoadingComplete || authLoading || loading || !mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center space-y-4">
@@ -123,13 +127,6 @@ export default function ApplicationsPage() {
       </div>
     )
   }
-
-  console.log('Main content rendered:', {
-    user: !!user,
-    userValue: user,
-    userType: typeof user,
-    applications: applications.length
-  })
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -174,9 +171,7 @@ export default function ApplicationsPage() {
             </div>
           </div>
 
-          {(() => {
-            console.log('Rendering condition check:', { user: !!user, userValue: user })
-            return !user ? (
+          {!user ? (
               // 비로그인 상태 - 샘플 데이터로 구조 미리보기
               <div className="relative min-h-[500px]">
               {/* 샘플 카드들 먼저 배치 */}
@@ -300,7 +295,7 @@ export default function ApplicationsPage() {
                 </div>
               ))}
             </div>
-          )})()}
+          )}
         </div>
       </main>
     </div>
