@@ -133,9 +133,9 @@ export default function Home() {
   const initialLoadStartRef = useRef<number>(Date.now())
   const [minLoadingComplete, setMinLoadingComplete] = useState(false)
 
-  // 최소 로딩 시간 보장 (2초)
+  // 최소 로딩 시간 보장 (1.7초)
   useEffect(() => {
-    const minLoadingTime = 2000
+    const minLoadingTime = 1700
     const elapsed = Date.now() - initialLoadStartRef.current
     const remaining = Math.max(0, minLoadingTime - elapsed)
 
