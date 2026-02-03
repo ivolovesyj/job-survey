@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { Navigation } from '@/components/Navigation'
 
 export default function LoginPage() {
   const { user, loading, signInWithKakao } = useAuth()
@@ -38,8 +39,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <Navigation />
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="w-32 h-32 mx-auto">
             <Image src="/logo-final.png" alt="지원함" width={128} height={128} className="w-full h-full object-contain" />
@@ -78,5 +81,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  </div>
   )
 }

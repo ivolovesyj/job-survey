@@ -168,9 +168,9 @@ export default function ApplicationsPage() {
           {!user ? (
             // 비로그인 상태 - 샘플 데이터로 구조 미리보기
             <>
-              <div className="grid gap-4 relative">
+              <div className="grid gap-4 relative min-h-[600px]">
                 {/* 오버레이 */}
-                <div className="absolute inset-0 bg-gray-50/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
+                <div className="absolute inset-0 bg-gray-50/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg min-h-full">
                   <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4 text-center">
                     <div className="w-16 h-16 mb-4 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                       <Briefcase className="w-8 h-8 text-white" />

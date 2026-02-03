@@ -132,6 +132,7 @@ export default function Home() {
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
+  const [loadingMessage] = useState(() => getRandomLoadingMessage())
 
   // 로그인된 경우에만 온보딩 체크
   useEffect(() => {
@@ -466,10 +467,10 @@ export default function Home() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center animate-bounce">
-            <Package className="w-8 h-8 text-white" />
+          <div className="w-24 h-24 mx-auto animate-bounce">
+            <Image src="/logo-final.png" alt="지원함" width={96} height={96} className="w-full h-full object-contain" />
           </div>
-          <p className="text-lg font-medium text-gray-700">로딩 중...</p>
+          <p className="mt-4 text-lg font-medium text-gray-700">{loadingMessage}</p>
         </div>
       </div>
     )
