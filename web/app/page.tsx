@@ -21,6 +21,20 @@ const CAREER_OPTIONS = [
   { value: '경력무관', label: '경력무관' },
 ]
 
+const LOADING_MESSAGES = [
+  '지원함이 열심히 정리 중!',
+  '당신의 지원함을 채우는 중...',
+  '합격의 기운을 수집 중...',
+  '지원함 싹- 모으는 중!',
+  '내 지원함 착착 정리 중',
+  '소중한 기회를 담는 중',
+]
+
+// 랜덤 로딩 메시지 선택
+const getRandomLoadingMessage = () => {
+  return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]
+}
+
 function FilterEditPanel({ filters, options, onSave, onCancel }: {
   filters: UserFilters
   options: { depth_ones: string[], regions: string[], employee_types: string[] } | null
@@ -115,6 +129,7 @@ export default function Home() {
   const [filterOptions, setFilterOptions] = useState<{depth_ones: string[], regions: string[], employee_types: string[]} | null>(null)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loadingMessage] = useState(() => getRandomLoadingMessage())
 
   // 로그인된 경우에만 온보딩 체크
   useEffect(() => {
@@ -442,9 +457,11 @@ export default function Home() {
   if (authLoading || checkingOnboarding) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-4 text-gray-600">로딩 중...</p>
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center animate-bounce">
+            <span className="text-3xl">📦</span>
+          </div>
+          <p className="mt-4 text-lg font-medium text-gray-700">{loadingMessage}</p>
         </div>
       </div>
     )
@@ -453,9 +470,11 @@ export default function Home() {
   if (loading && jobs.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-4 text-gray-600">공고를 불러오는 중...</p>
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center animate-bounce">
+            <span className="text-3xl">📦</span>
+          </div>
+          <p className="mt-4 text-lg font-medium text-gray-700">{loadingMessage}</p>
         </div>
       </div>
     )
