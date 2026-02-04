@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { X as XIcon, Check } from 'lucide-react'
+import { X as XIcon, Check, Search } from 'lucide-react'
 
 interface FilterModalProps {
   isOpen: boolean
@@ -48,6 +48,9 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
   const [selectedRegions, setSelectedRegions] = useState<string[]>([])
   const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState<string[]>([])
 
+  // 검색
+  const [searchQuery, setSearchQuery] = useState('')
+
   // filters 변경 시 로컬 상태 업데이트
   useEffect(() => {
     if (!options || !filters) return
@@ -90,6 +93,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
     setSelectedRegions([])
     setSelectedEmploymentTypes([])
     setSelectedDepthOne(null)
+    setSearchQuery('')
   }
 
   const toggleDepthTwo = (depthTwo: string) => {
@@ -134,10 +138,21 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
     }
   }
 
+  // 검색 필터링
+  const filteredDepthOnes = options.depth_ones.filter(depthOne =>
+    depthOne.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const filteredDepthTwos = selectedDepthOne
+    ? (options.depth_twos_map[selectedDepthOne] || []).filter(depthTwo =>
+        depthTwo.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : []
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -146,7 +161,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
             <h2 className="text-xl font-bold text-gray-900">필터 선택</h2>
             <button
               onClick={handleReset}
-              className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition"
+              className="text-[15px] text-gray-500 hover:text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-100 transition"
             >
               초기화
             </button>
@@ -166,7 +181,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('job')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
                   selectedCategory === 'job'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -193,7 +208,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('career')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
                   selectedCategory === 'career'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -220,7 +235,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('region')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
                   selectedCategory === 'region'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -247,7 +262,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('employment')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
                   selectedCategory === 'employment'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -273,11 +288,23 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
 
           {/* 2단계: 중분류 (직무의 경우만 표시) */}
           {selectedCategory === 'job' && (
-            <div className="w-56 border-r bg-white overflow-y-auto">
-              <div className="p-3">
+            <div className="w-56 border-r bg-white overflow-hidden flex flex-col">
+              <div className="p-3 border-b">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="직무 검색..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-[14px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
                 <div className="text-xs font-semibold text-gray-500 mb-2 px-2">하나를 선택하세요</div>
                 <div className="space-y-1">
-                  {options.depth_ones.map(depthOne => {
+                  {filteredDepthOnes.map(depthOne => {
                     const depthTwos = options.depth_twos_map[depthOne] || []
                     const selectedCount = depthTwos.filter(dt => selectedDepthTwos.includes(dt)).length
 
@@ -285,7 +312,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={depthOne}
                         onClick={() => setSelectedDepthOne(depthOne)}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition ${
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-[15px] transition ${
                           selectedDepthOne === depthOne
                             ? 'bg-purple-50 text-purple-700 font-medium border border-purple-200'
                             : 'text-gray-700 hover:bg-gray-50'
@@ -302,6 +329,11 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       </button>
                     )
                   })}
+                  {filteredDepthOnes.length === 0 && (
+                    <div className="text-center text-gray-500 text-sm py-8">
+                      검색 결과가 없습니다
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -312,13 +344,13 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
             <div className="p-6">
               {selectedCategory === 'job' && selectedDepthOne && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-3">{selectedDepthOne}</div>
+                  <div className="text-[15px] font-semibold text-gray-700 mb-3">{selectedDepthOne}</div>
                   <div className="flex flex-wrap gap-2">
-                    {(options.depth_twos_map[selectedDepthOne] || []).map(depthTwo => (
+                    {filteredDepthTwos.map(depthTwo => (
                       <button
                         key={depthTwo}
                         onClick={() => toggleDepthTwo(depthTwo)}
-                        className={`px-4 py-2 rounded-full text-sm border transition ${
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
                           selectedDepthTwos.includes(depthTwo)
                             ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
@@ -327,25 +359,30 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                         {depthTwo}
                       </button>
                     ))}
+                    {filteredDepthTwos.length === 0 && searchQuery && (
+                      <div className="w-full text-center text-gray-500 text-sm py-8">
+                        검색 결과가 없습니다
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {selectedCategory === 'job' && !selectedDepthOne && (
-                <div className="text-center text-gray-500 mt-20">
+                <div className="text-center text-gray-500 text-[15px] mt-20">
                   왼쪽에서 직무 카테고리를 선택하세요
                 </div>
               )}
 
               {selectedCategory === 'career' && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-3">경력 선택 (여러 개 가능)</div>
+                  <div className="text-[15px] font-semibold text-gray-700 mb-3">경력 선택 (여러 개 가능)</div>
                   <div className="flex flex-wrap gap-2">
                     {CAREER_OPTIONS.map(option => (
                       <button
                         key={option.value}
                         onClick={() => toggleCareer(option.value)}
-                        className={`px-4 py-2 rounded-full text-sm border transition ${
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
                           selectedCareers.includes(option.value)
                             ? 'bg-green-600 text-white border-green-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
@@ -360,13 +397,13 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
 
               {selectedCategory === 'region' && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-3">지역 선택</div>
+                  <div className="text-[15px] font-semibold text-gray-700 mb-3">지역 선택</div>
                   <div className="flex flex-wrap gap-2">
                     {options.regions.map(region => (
                       <button
                         key={region}
                         onClick={() => toggleRegion(region)}
-                        className={`px-4 py-2 rounded-full text-sm border transition ${
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
                           selectedRegions.includes(region)
                             ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
@@ -381,13 +418,13 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
 
               {selectedCategory === 'employment' && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-700 mb-3">고용형태 선택</div>
+                  <div className="text-[15px] font-semibold text-gray-700 mb-3">고용형태 선택</div>
                   <div className="flex flex-wrap gap-2">
                     {options.employee_types.map(type => (
                       <button
                         key={type}
                         onClick={() => toggleEmploymentType(type)}
-                        className={`px-4 py-2 rounded-full text-sm border transition ${
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
                           selectedEmploymentTypes.includes(type)
                             ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-orange-400'
@@ -405,7 +442,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
 
         {/* 푸터 */}
         <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+          <div className="text-[15px] text-gray-600">
             {selectedDepthTwos.length > 0 && (
               <span className="font-medium">
                 직무 {selectedDepthTwos.length}개
