@@ -23,14 +23,18 @@ export async function GET(request: Request) {
 
     jobs?.forEach(job => {
       job.depth_ones?.forEach((d: string) => {
-        depthOnesSet.add(d)
+        // _ 를 · 로 변경
+        const displayName = d.replace(/_/g, '·')
+        depthOnesSet.add(displayName)
 
         // 해당 depth_one의 depth_twos 수집
-        if (!depthTwosMap.has(d)) {
-          depthTwosMap.set(d, new Set())
+        if (!depthTwosMap.has(displayName)) {
+          depthTwosMap.set(displayName, new Set())
         }
         job.depth_twos?.forEach((dt: string) => {
-          depthTwosMap.get(d)!.add(dt)
+          // _ 를 · 로 변경
+          const displayDepthTwo = dt.replace(/_/g, '·')
+          depthTwosMap.get(displayName)!.add(displayDepthTwo)
         })
       })
 
