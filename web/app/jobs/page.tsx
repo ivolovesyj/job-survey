@@ -59,6 +59,9 @@ function FilterSidebar({ filters, options, onSave, user, isSidebarCollapsed, set
 
   // filters 변경 시 로컬 상태 업데이트
   useEffect(() => {
+    // options가 아직 로드되지 않았으면 대기
+    if (!options) return
+
     if (filters && filters.preferred_job_types) {
       // DB에 저장된 _ 를 화면 표시용 · 로 변환
       const displayJobTypes = filters.preferred_job_types.map(job => job.replace(/_/g, '·'))
@@ -68,7 +71,7 @@ function FilterSidebar({ filters, options, onSave, user, isSidebarCollapsed, set
       const depth2s: string[] = []
 
       displayJobTypes.forEach(job => {
-        if (options?.depth_ones.includes(job)) {
+        if (options.depth_ones.includes(job)) {
           depth1s.push(job)
         } else {
           depth2s.push(job)
@@ -77,9 +80,9 @@ function FilterSidebar({ filters, options, onSave, user, isSidebarCollapsed, set
 
       setSelectedDepthOnes(depth1s)
       setSelectedDepthTwos(depth2s)
-      setRegions(filters.preferred_locations)
+      setRegions(filters.preferred_locations || [])
       setCareers(filters.career_level ? filters.career_level.split(',').filter(Boolean) : ['경력무관'])
-      setEmpTypes(filters.work_style)
+      setEmpTypes(filters.work_style || [])
     }
   }, [filters, options])
 
@@ -211,130 +214,126 @@ function FilterSidebar({ filters, options, onSave, user, isSidebarCollapsed, set
             )}
           </div>
 
-        {/* 직무 - 모달 버튼 */}
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">직무</div>
-          <button
-            onClick={() => {
-              if (!user) {
-                setShowLoginPrompt(true)
-              } else {
-                setShowJobModal(true)
-              }
-            }}
-            className={`w-full px-3 py-2.5 rounded-lg border text-left text-sm transition ${
-              selectedDepthTwos.length > 0
-                ? 'bg-purple-50 border-purple-300 text-purple-700'
-                : user
-                  ? 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
-                  : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-            disabled={!user}
-          >
-            {selectedDepthTwos.length > 0 ? (
-              <span className="flex items-center justify-between">
-                <span className="font-medium">{selectedDepthTwos.length}개 선택됨</span>
-                <span className="text-xs text-purple-600">변경하기</span>
-              </span>
-            ) : (
-              <span className="text-gray-500">직무를 선택하세요</span>
-            )}
-          </button>
-          {selectedDepthTwos.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {selectedDepthTwos.slice(0, 3).map(job => (
-                <span key={job} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-                  {job}
+          {/* 직무 - 모달 버튼 */}
+          <div>
+            <div className="text-sm font-semibold text-gray-700 mb-2">직무</div>
+            <button
+              onClick={() => {
+                if (!user) {
+                  setShowLoginPrompt(true)
+                } else {
+                  setShowJobModal(true)
+                }
+              }}
+              className={`w-full px-3 py-2.5 rounded-lg border text-left text-sm transition ${selectedDepthTwos.length > 0
+                  ? 'bg-purple-50 border-purple-300 text-purple-700'
+                  : user
+                    ? 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                    : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              disabled={!user}
+            >
+              {selectedDepthTwos.length > 0 ? (
+                <span className="flex items-center justify-between">
+                  <span className="font-medium">{selectedDepthTwos.length}개 선택됨</span>
+                  <span className="text-xs text-purple-600">변경하기</span>
                 </span>
-              ))}
-              {selectedDepthTwos.length > 3 && (
-                <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-                  +{selectedDepthTwos.length - 3}
-                </span>
+              ) : (
+                <span className="text-gray-500">직무를 선택하세요</span>
               )}
+            </button>
+            {selectedDepthTwos.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {selectedDepthTwos.slice(0, 3).map(job => (
+                  <span key={job} className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                    {job}
+                  </span>
+                ))}
+                {selectedDepthTwos.length > 3 && (
+                  <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                    +{selectedDepthTwos.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 경력 (다중 선택) */}
+          <div>
+            <div className="text-sm font-semibold text-gray-700 mb-2">경력 (여러 개 선택 가능)</div>
+            <div className="flex flex-wrap gap-1.5">
+              {CAREER_OPTIONS.map(o => (
+                <button
+                  key={o.value}
+                  onClick={() => toggle(careers, setCareers, o.value)}
+                  disabled={!user}
+                  className={`text-xs px-2.5 py-1.5 rounded-full border transition ${careers.includes(o.value)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : user
+                        ? 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    }`}
+                >{o.label}</button>
+              ))}
             </div>
-          )}
-        </div>
-
-        {/* 경력 (다중 선택) */}
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">경력 (여러 개 선택 가능)</div>
-          <div className="flex flex-wrap gap-1.5">
-            {CAREER_OPTIONS.map(o => (
-              <button
-                key={o.value}
-                onClick={() => toggle(careers, setCareers, o.value)}
-                disabled={!user}
-                className={`text-xs px-2.5 py-1.5 rounded-full border transition ${
-                  careers.includes(o.value)
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : user
-                      ? 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-                      : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                }`}
-              >{o.label}</button>
-            ))}
           </div>
-        </div>
 
-        {/* 지역 */}
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">지역</div>
-          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-            {options.regions.map(r => (
-              <button
-                key={r}
-                onClick={() => toggle(regions, setRegions, r)}
-                disabled={!user}
-                className={`text-xs px-2.5 py-1.5 rounded-full border transition ${
-                  regions.includes(r)
-                    ? 'bg-green-600 text-white border-green-600'
-                    : user
-                      ? 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
-                      : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                }`}
-              >{r}</button>
-            ))}
+          {/* 지역 */}
+          <div>
+            <div className="text-sm font-semibold text-gray-700 mb-2">지역</div>
+            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+              {options.regions.map(r => (
+                <button
+                  key={r}
+                  onClick={() => toggle(regions, setRegions, r)}
+                  disabled={!user}
+                  className={`text-xs px-2.5 py-1.5 rounded-full border transition ${regions.includes(r)
+                      ? 'bg-green-600 text-white border-green-600'
+                      : user
+                        ? 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
+                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    }`}
+                >{r}</button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* 고용형태 */}
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">고용형태</div>
-          <div className="flex flex-wrap gap-1.5">
-            {options.employee_types.map(t => (
-              <button
-                key={t}
-                onClick={() => toggle(empTypes, setEmpTypes, t)}
-                disabled={!user}
-                className={`text-xs px-2.5 py-1.5 rounded-full border transition ${
-                  empTypes.includes(t)
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : user
-                      ? 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'
-                      : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                }`}
-              >{t}</button>
-            ))}
+          {/* 고용형태 */}
+          <div>
+            <div className="text-sm font-semibold text-gray-700 mb-2">고용형태</div>
+            <div className="flex flex-wrap gap-1.5">
+              {options.employee_types.map(t => (
+                <button
+                  key={t}
+                  onClick={() => toggle(empTypes, setEmpTypes, t)}
+                  disabled={!user}
+                  className={`text-xs px-2.5 py-1.5 rounded-full border transition ${empTypes.includes(t)
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : user
+                        ? 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'
+                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    }`}
+                >{t}</button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* 적용 버튼 */}
-        <div className="pt-2 sticky bottom-0 bg-white">
-          <Button
-            onClick={handleApply}
-            disabled={!user || selectedDepthTwos.length === 0}
-            className="w-full"
-          >
-            <Check className="w-4 h-4 mr-2" />
-            필터 적용
-          </Button>
-          {!user && (
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              로그인 후 필터를 저장할 수 있습니다
-            </p>
-          )}
-        </div>
+          {/* 적용 버튼 */}
+          <div className="pt-2 sticky bottom-0 bg-white">
+            <Button
+              onClick={handleApply}
+              disabled={!user || selectedDepthTwos.length === 0}
+              className="w-full"
+            >
+              <Check className="w-4 h-4 mr-2" />
+              필터 적용
+            </Button>
+            {!user && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                로그인 후 필터를 저장할 수 있습니다
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -390,11 +389,10 @@ function FilterSidebar({ filters, options, onSave, user, isSidebarCollapsed, set
                                 <button
                                   key={depthTwo}
                                   onClick={() => handleDepthTwoToggle(depthOne, depthTwo)}
-                                  className={`px-3 py-1.5 rounded-full text-sm border transition ${
-                                    isSelected
+                                  className={`px-3 py-1.5 rounded-full text-sm border transition ${isSelected
                                       ? 'bg-purple-600 text-white border-purple-600'
                                       : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
-                                  }`}
+                                    }`}
                                 >
                                   {depthTwo}
                                 </button>
