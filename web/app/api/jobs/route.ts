@@ -76,8 +76,20 @@ function scoreJob(
 
     for (const prefType of prefs.preferred_job_types) {
       const prefLower = prefType.toLowerCase()
-      if (jobTypes.some(t => t.toLowerCase().includes(prefLower)) ||
-          jobText.includes(prefLower)) {
+
+      // 더 유연한 매칭: 정확한 매칭 또는 부분 매칭
+      const matches = jobTypes.some(t => {
+        const jobTypeLower = t.toLowerCase()
+        // 1) 정확히 일치
+        if (jobTypeLower === prefLower) return true
+        // 2) 선호 직무가 공고 직무에 포함됨
+        if (jobTypeLower.includes(prefLower)) return true
+        // 3) 공고 직무가 선호 직무에 포함됨
+        if (prefLower.includes(jobTypeLower)) return true
+        return false
+      }) || jobText.includes(prefLower)
+
+      if (matches) {
         score += 15
         reasons.push(`✓ ${prefType}`)
         jobMatched = true
