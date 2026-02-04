@@ -667,6 +667,11 @@ export default function Home() {
     )
   }
 
+  // 필터 미설정 체크
+  const hasNoFilters = user && filters && (
+    !filters.preferred_job_types || filters.preferred_job_types.length === 0
+  )
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <Navigation />
@@ -698,14 +703,36 @@ export default function Home() {
           }}
         />
 
-        {/* 메인 컨텐츠: 3D 캐러셀 */}
-        <main className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-          <Carousel3D
-            jobs={jobs}
-            currentIndex={currentIndex}
-            onAction={handleAction}
-            onIndexChange={setCurrentIndex}
-          />
+        {/* 메인 컨텐츠: 3D 캐러셀 또는 필터 설정 안내 */}
+        <main className="flex-1 flex flex-col items-start justify-start p-4 pt-12 relative overflow-hidden">
+          {hasNoFilters ? (
+            // 필터 미설정 시 안내 메시지
+            <div className="w-full max-w-2xl mx-auto mt-20 text-center space-y-6">
+              <div className="text-7xl">🎯</div>
+              <h2 className="text-3xl font-bold text-gray-900">필터를 설정하고 공고를 받아보세요!</h2>
+              <p className="text-lg text-gray-600">
+                왼쪽 필터에서 원하는 직무, 경력, 지역을 선택하면<br />
+                맞춤형 채용공고를 추천해드립니다.
+              </p>
+              <div className="pt-4">
+                <div className="inline-block px-6 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800 font-medium">
+                    👈 왼쪽 사이드바에서 필터를 설정해주세요
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // 필터 설정됨: 3D 캐러셀 표시
+            <div className="w-full h-full flex items-start justify-center pt-8">
+              <Carousel3D
+                jobs={jobs}
+                currentIndex={currentIndex}
+                onAction={handleAction}
+                onIndexChange={setCurrentIndex}
+              />
+            </div>
+          )}
         </main>
       </div>
 
