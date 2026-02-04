@@ -512,24 +512,34 @@ export async function GET(request: Request) {
     // 5. 활성 공고 가져오기 (PostgreSQL 함수로 직무/지역 필터링)
     const fetchLimit = Math.max(2000, (offset + limit) * 5)
 
-    // PostgreSQL RPC 함수 호출 (사용자 선택값 그대로 전달 - 동의어 확장 불필요)
-    const rpcParams = {
-      p_job_types: preferences?.preferred_job_types?.length
-        ? preferences.preferred_job_types
-        : null,
-      p_locations: preferences?.preferred_locations?.length
-        ? preferences.preferred_locations
-        : null,
-      p_limit: fetchLimit
+    // 직접 쿼리로 변경 (RPC 오버헤드 제거)
+    const queryStartTime = Date.now()
+
+    let query = supabase
+      .from('jobs')
+      .select('*')
+      .eq('is_active', true)
+      .order('crawled_at', { ascending: false })
+      .limit(fetchLimit)
+
+    // 직무 필터 (depth_twos에 포함된 값이 있는지)
+    if (preferences?.preferred_job_types?.length) {
+      query = query.overlaps('depth_twos', preferences.preferred_job_types)
     }
 
-    console.log('RPC params:', JSON.stringify(rpcParams, null, 2))
+    // 지역 필터
+    if (preferences?.preferred_locations?.length) {
+      query = query.overlaps('regions', preferences.preferred_locations)
+    }
 
-    // 인덱스 추가 후 RPC 함수 사용
-    const rpcStartTime = Date.now()
-    let { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
+    console.log('[API /jobs] Query filters:', {
+      job_types: preferences?.preferred_job_types || null,
+      locations: preferences?.preferred_locations || null
+    })
 
-    console.log(`[API /jobs] +${Date.now() - startTime}ms - RPC done (took ${Date.now() - rpcStartTime}ms), returned: ${jobs ? jobs.length : 0} jobs`)
+    let { data: jobs, error: jobsError } = await query as { data: JobRow[] | null, error: any }
+
+    console.log(`[API /jobs] +${Date.now() - startTime}ms - Query done (took ${Date.now() - queryStartTime}ms), returned: ${jobs ? jobs.length : 0} jobs`)
 
     // jsonb 타입을 배열로 변환
     if (jobs && jobs.length > 0) {
