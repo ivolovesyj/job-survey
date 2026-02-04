@@ -35,8 +35,8 @@ export function Carousel3D({ jobs, currentIndex, onAction, onIndexChange }: Caro
       opacity = 0
     }
 
-    // 옆 카드 blur 제거 (클릭 가능하게)
-    const blur = 0
+    // 옆 카드 blur 효과
+    const blur = Math.abs(diff) === 1 ? 1 : 0
     const zIndex = 100 - Math.abs(diff) * 10
 
     return { x, z, scale, opacity, blur, zIndex }
@@ -146,32 +146,27 @@ export function Carousel3D({ jobs, currentIndex, onAction, onIndexChange }: Caro
               transition: 'transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease-out, filter 0.5s ease-out',
             }}
             onClick={(e) => {
-              // 옆 카드 클릭 시 해당 카드로 이동
-              if (index !== currentIndex && Math.abs(index - currentIndex) === 1) {
+              // 드래그가 아닌 순수 클릭일 때만 옆 카드로 이동
+              const dragDistance = Math.abs(startX - e.clientX)
+              if (index !== currentIndex && Math.abs(index - currentIndex) === 1 && dragDistance < 10) {
                 e.stopPropagation()
                 onIndexChange(index)
               }
             }}
             onTouchStart={(e) => {
               // 카드 내에서도 스와이프 가능하게 이벤트 전파
-              if (index === currentIndex) {
-                handleDragStart(e.touches[0].clientX)
-              }
+              handleDragStart(e.touches[0].clientX)
             }}
             onTouchEnd={(e) => {
-              if (index === currentIndex) {
-                handleDragEnd(e.changedTouches[0].clientX)
-              }
+              handleDragEnd(e.changedTouches[0].clientX)
             }}
             onMouseDown={(e) => {
-              if (index === currentIndex) {
-                handleDragStart(e.clientX)
-              }
+              // 모든 카드에서 마우스 다운 시작
+              e.preventDefault()
+              handleDragStart(e.clientX)
             }}
             onMouseUp={(e) => {
-              if (index === currentIndex) {
-                handleDragEnd(e.clientX)
-              }
+              handleDragEnd(e.clientX)
             }}
           >
             <JobCard
