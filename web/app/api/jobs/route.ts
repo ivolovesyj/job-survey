@@ -310,35 +310,65 @@ function scoreJob(
     }
   }
 
-  // 2. 지역 매칭
+  // 2. 지역 필터 (엄격한 필터링)
   if (prefs.preferred_locations?.length && job.location) {
     const locationMatch = prefs.preferred_locations.some(loc =>
       job.location!.includes(loc) || loc.includes(job.location!)
     )
-    if (locationMatch) {
-      score += 10
-      // reasons.push('선호 지역') - 키워드 태그에서 제외
-    } else {
-      score -= 30
-      warnings.push(`⚠️ ${job.location} (선호 지역 아님)`)
+    if (!locationMatch) {
+      matchesFilter = false
+      warnings.push(`⚠️ ${job.location} (선호 지역 불일치)`)
     }
   }
 
-  // 3. 경력 매칭
+  // 3. 경력 필터 (엄격한 필터링)
   if (prefs.career_level) {
-    const isNewbie = prefs.career_level === '신입' || prefs.career_level === '경력무관'
-    if (isNewbie) {
-      if (job.career_min === 0 || job.career_min === null) {
-        score += 5
-        reasons.push('신입 가능')
-      } else if (job.career_min && job.career_min >= 3) {
-        score -= 20
-        warnings.push(`⚠️ 경력 ${job.career_min}년 이상`)
+    const careerLevels = prefs.career_level.split(',').filter(Boolean)
+    let careerMatched = false
+
+    for (const level of careerLevels) {
+      if (level === '신입' || level === '경력무관') {
+        // 신입/경력무관: career_min이 0이거나 null인 공고
+        if (job.career_min === 0 || job.career_min === null) {
+          careerMatched = true
+          reasons.push('신입 가능')
+          break
+        }
+      } else if (level === '1-3') {
+        // 1-3년: career_min이 3 이하인 공고
+        if (job.career_min === null || job.career_min <= 3) {
+          careerMatched = true
+          break
+        }
+      } else if (level === '3-5') {
+        // 3-5년: career_min이 5 이하인 공고
+        if (job.career_min !== null && job.career_min >= 1 && job.career_min <= 5) {
+          careerMatched = true
+          break
+        }
+      } else if (level === '5-10') {
+        // 5-10년: career_min이 5-10 범위인 공고
+        if (job.career_min !== null && job.career_min >= 3 && job.career_min <= 10) {
+          careerMatched = true
+          break
+        }
+      } else if (level === '10+') {
+        // 10년+: career_min이 10 이상인 공고
+        if (job.career_min !== null && job.career_min >= 10) {
+          careerMatched = true
+          break
+        }
       }
     }
+
+    if (!careerMatched) {
+      matchesFilter = false
+      const minCareer = job.career_min !== null ? `경력 ${job.career_min}년 이상` : '경력 요구사항 불명확'
+      warnings.push(`⚠️ ${minCareer} (경력 조건 불일치)`)
+    }
   }
 
-  // 3.5 고용형태 매칭 (contractor→프리랜서, temporary→계약직/일용직 매핑)
+  // 3.5 고용형태 필터 (엄격한 필터링)
   if (prefs.work_style?.length && job.employee_types?.length) {
     const normalizedPrefs = prefs.work_style.map(ws => {
       if (ws === 'contractor') return '프리랜서'
@@ -346,22 +376,23 @@ function scoreJob(
       return ws
     })
     const match = normalizedPrefs.some(ws => job.employee_types!.includes(ws))
-    if (match) {
-      score += 5
+    if (!match) {
+      matchesFilter = false
+      warnings.push(`⚠️ 고용형태 불일치`)
+    } else {
       reasons.push('희망 고용형태')
     }
   }
 
-  // 3.6 기업 유형 매칭
+  // 3.6 기업 유형 필터 (엄격한 필터링)
   if (prefs.preferred_company_types?.length && companyType) {
     const match = prefs.preferred_company_types.includes(companyType)
-    if (match) {
-      score += 10
+    if (!match && companyType !== '기타') {
+      // "기타"는 필터에서 제외하지 않음 (회사 정보 없는 경우)
+      matchesFilter = false
+      warnings.push(`⚠️ ${companyType} (선호 유형 불일치)`)
+    } else if (match) {
       reasons.push(`${companyType}`)
-    } else if (companyType !== '기타') {
-      // "기타"는 패널티 없음
-      score -= 10
-      warnings.push(`⚠️ ${companyType} (선호 유형 아님)`)
     }
   }
 
