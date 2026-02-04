@@ -10,16 +10,11 @@ export async function GET(request: Request) {
     // 비로그인 사용자도 필터 옵션을 볼 수 있도록 인증 체크 제거
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-    // 활성 공고에서 고유한 depth_ones, depth_twos, regions 추출
+    // 활성 공고에서 고유한 depth_ones, depth_twos, regions, employee_types, company_type 추출
     const { data: jobs } = await supabase
       .from('jobs')
-      .select('depth_ones, depth_twos, regions, employee_types')
+      .select('depth_ones, depth_twos, regions, employee_types, company_type')
       .eq('is_active', true)
-
-    // 기업 유형 가져오기
-    const { data: companies } = await supabase
-      .from('companies')
-      .select('company_type')
 
     const depthOnesSet = new Set<string>()
     const depthTwosMap = new Map<string, Set<string>>() // depth_one → Set<depth_two>
@@ -50,12 +45,10 @@ export async function GET(request: Request) {
         regionsSet.add(city)
       })
       job.employee_types?.forEach((t: string) => employeeTypesSet.add(t))
-    })
 
-    // 기업 유형 수집
-    companies?.forEach(company => {
-      if (company.company_type) {
-        companyTypesSet.add(company.company_type)
+      // company_type 수집
+      if (job.company_type) {
+        companyTypesSet.add(job.company_type)
       }
     })
 
