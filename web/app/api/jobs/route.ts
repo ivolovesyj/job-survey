@@ -618,8 +618,10 @@ export async function GET(request: Request) {
     const { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
 
     if (jobsError) {
-      console.error('Jobs RPC error:', jobsError)
-      console.error('RPC 함수가 없거나 오류가 발생했습니다. docs/update-get-filtered-jobs-function.sql을 Supabase에서 실행하세요.')
+      console.error('[API /jobs] RPC error details:', JSON.stringify(jobsError, null, 2))
+      console.error('[API /jobs] RPC error message:', jobsError?.message)
+      console.error('[API /jobs] RPC error code:', jobsError?.code)
+      console.error('[API /jobs] RPC params were:', JSON.stringify(rpcParams, null, 2))
 
       // Fallback: 직접 쿼리 (RPC 함수 없을 때)
       const { data: fallbackJobs, error: fallbackError } = await supabase
