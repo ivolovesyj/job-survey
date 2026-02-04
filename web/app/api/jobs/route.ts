@@ -619,6 +619,19 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Failed to fetch jobs', details: fallbackError.message }, { status: 500 })
       }
 
+      // Fallback 결과 검증
+      if (!fallbackJobs || fallbackJobs.length === 0) {
+        console.log('No jobs found in fallback query')
+        return NextResponse.json({
+          jobs: [],
+          total: 0,
+          limit,
+          offset,
+          hasMore: false,
+          message: 'No jobs available matching your filters.',
+        })
+      }
+
       // Fallback 결과를 jobs 변수에 할당하여 계속 진행
       const jobsResult = fallbackJobs as JobRow[]
 
@@ -646,45 +659,58 @@ export async function GET(request: Request) {
       }
 
       const now = Date.now()
-      const scoredJobs = filteredJobs
-        .filter((job: JobRow) => !seenJobIds.has(job.id))
-        .map((job: JobRow) => {
-          const companyType = job.company_type || '기타'
-          const isInDB = job.company_type !== null && job.company_type !== '기타'
-          const { score, reasons, warnings, matchesFilter } = scoreJob(job, preferences, keywordWeights, companyPrefs, companyType, isInDB)
-          const isNew = (now - new Date(job.crawled_at).getTime()) < 24 * 60 * 60 * 1000
+      let scoredJobs: any[] = []
 
-          return {
-            id: job.id,
-            company: job.company,
-            company_image: job.company_image,
-            title: job.title,
-            location: job.location || '위치 미정',
-            score,
-            reason: reasons[0] || '추천 공고',
-            reasons,
-            warnings,
-            link: `https://zighang.com/recruitment/${job.id}`,
-            source: job.source,
-            crawledAt: job.crawled_at,
-            detail: job.detail,
-            depth_ones: job.depth_ones,
-            depth_twos: job.depth_twos,
-            keywords: job.keywords,
-            career_min: job.career_min,
-            career_max: job.career_max,
-            employee_types: job.employee_types,
-            deadline_type: job.deadline_type,
-            end_date: job.end_date,
-            is_new: isNew,
-            matchesFilter,
-          }
-        })
-        .filter(j => j.matchesFilter)
-        .sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score
-          return new Date(b.crawledAt).getTime() - new Date(a.crawledAt).getTime()
-        })
+      try {
+        scoredJobs = filteredJobs
+          .filter((job: JobRow) => !seenJobIds.has(job.id))
+          .map((job: JobRow) => {
+            try {
+              const companyType = job.company_type || '기타'
+              const isInDB = job.company_type !== null && job.company_type !== '기타'
+              const { score, reasons, warnings, matchesFilter } = scoreJob(job, preferences, keywordWeights, companyPrefs, companyType, isInDB)
+              const isNew = (now - new Date(job.crawled_at).getTime()) < 24 * 60 * 60 * 1000
+
+              return {
+                id: job.id,
+                company: job.company,
+                company_image: job.company_image,
+                title: job.title,
+                location: job.location || '위치 미정',
+                score,
+                reason: reasons[0] || '추천 공고',
+                reasons,
+                warnings,
+                link: `https://zighang.com/recruitment/${job.id}`,
+                source: job.source,
+                crawledAt: job.crawled_at,
+                detail: job.detail,
+                depth_ones: job.depth_ones,
+                depth_twos: job.depth_twos,
+                keywords: job.keywords,
+                career_min: job.career_min,
+                career_max: job.career_max,
+                employee_types: job.employee_types,
+                deadline_type: job.deadline_type,
+                end_date: job.end_date,
+                is_new: isNew,
+                matchesFilter,
+              }
+            } catch (jobError) {
+              console.error(`Error scoring job ${job.id}:`, jobError)
+              return null
+            }
+          })
+          .filter((job): job is NonNullable<typeof job> => job !== null)
+          .filter(j => j.matchesFilter)
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score
+            return new Date(b.crawledAt).getTime() - new Date(a.crawledAt).getTime()
+          })
+      } catch (scoringError) {
+        console.error('Error in fallback scoring:', scoringError)
+        return NextResponse.json({ error: 'Failed to process jobs', details: String(scoringError) }, { status: 500 })
+      }
 
       const passedJobs = scoredJobs.filter(j => j.score >= 40)
       const paginatedJobs = passedJobs.slice(offset, offset + limit)
