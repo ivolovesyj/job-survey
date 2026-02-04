@@ -617,7 +617,7 @@ export async function GET(request: Request) {
 
     // 인덱스 추가 후 RPC 함수 사용
     console.log('[API /jobs] Using RPC function with indexes')
-    const { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
+    let { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
 
     console.log('[API /jobs] RPC returned:', jobs ? jobs.length : 0, 'jobs')
 
