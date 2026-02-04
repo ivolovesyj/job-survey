@@ -474,14 +474,14 @@ export default function Home() {
         console.error('user_profiles 조회 실패:', profileError)
         // DB 에러 발생해도 일단 채용공고 로드 (온보딩 모달은 표시하지 않음)
         setCheckingOnboarding(false)
-        fetchJobs() // 채용공고는 로드
+        setLoading(false)
         return
       }
 
       if (!profile || !profile.onboarding_completed) {
-        // 온보딩 미완료 → 채용공고만 로드 (온보딩 모달은 표시하지 않음)
+        // 온보딩 미완료 → 필터 설정 안내만 표시
         setCheckingOnboarding(false)
-        fetchJobs() // 채용공고는 로드
+        setLoading(false)
         return
       }
 
@@ -503,15 +503,26 @@ export default function Home() {
           career_level: data.career_level || '경력무관',
           work_style: data.work_style || [],
         })
-      }
 
-      setCheckingOnboarding(false)
-      fetchJobs()
+        // 필터가 있을 때만 공고 로드
+        if (data.preferred_job_types && data.preferred_job_types.length > 0) {
+          setCheckingOnboarding(false)
+          fetchJobs()
+        } else {
+          // 필터가 없으면 안내 메시지만 표시
+          setCheckingOnboarding(false)
+          setLoading(false)
+        }
+      } else {
+        // user_preferences가 없으면 안내 메시지만 표시
+        setCheckingOnboarding(false)
+        setLoading(false)
+      }
     } catch (e) {
       console.error('checkOnboarding 에러:', e)
-      // 에러 발생해도 일단 채용공고 로드
+      // 에러 발생 시 안내 메시지 표시
       setCheckingOnboarding(false)
-      fetchJobs()
+      setLoading(false)
     }
   }
 
@@ -968,20 +979,20 @@ export default function Home() {
             // 필터 미설정 시 안내 메시지
             <div className="w-full max-w-2xl mx-auto mt-20 text-center space-y-6">
               <div className="text-7xl">🎯</div>
-              <h2 className="text-3xl font-bold text-gray-900">필터를 설정하고 공고를 받아보세요!</h2>
+              <h2 className="text-3xl font-bold text-gray-900">필터를 선택하고<br />맞춤형 공고를 받아보세요!</h2>
               <p className="text-lg text-gray-600">
                 왼쪽 필터에서 원하는 직무, 경력, 지역을 선택하면<br />
-                맞춤형 채용공고를 추천해드립니다.
+                나에게 딱 맞는 채용공고를 추천해드립니다.
               </p>
               <div className="pt-4">
-                <div className="inline-block px-6 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 font-medium">
+                <div className="inline-block px-6 py-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <p className="text-sm text-purple-800 font-medium">
                     👈 왼쪽 사이드바에서 필터를 설정해주세요
                   </p>
                 </div>
               </div>
             </div>
-          ) : (
+          ) : jobs.length > 0 ? (
             // 필터 설정됨: 3D 캐러셀 표시
             <div className="w-full h-full flex items-start justify-center pt-8">
               <Carousel3D
@@ -991,7 +1002,7 @@ export default function Home() {
                 onIndexChange={setCurrentIndex}
               />
             </div>
-          )}
+          ) : null}
         </main>
       </div>
 
