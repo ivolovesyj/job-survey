@@ -492,48 +492,14 @@ export async function GET(request: Request) {
     const companyPrefs: CompanyPref[] = companiesResult.data || []
     const seenJobIds = new Set(seenResult.data?.map(a => a.job_id) || [])
 
-    // 5. 활성 공고 가져오기 (직무/지역 필터 적용)
-    const fetchLimit = (offset + limit) * 3 + 200
+    // 5. 활성 공고 가져오기 (충분히 많이 가져와서 필터링)
+    // TODO: 추후 DB 쿼리 최적화 (직무/지역 필터 추가)
+    const fetchLimit = Math.max(5000, (offset + limit) * 10)
 
-    // 직무 필터용 확장 키워드 생성 (원본 + 동의어)
-    let expandedJobTypes: string[] = []
-    if (preferences?.preferred_job_types?.length) {
-      for (const jobType of preferences.preferred_job_types) {
-        expandedJobTypes.push(jobType)
-        // 동의어 추가
-        const synonyms = JOB_TYPE_SYNONYMS[jobType] || []
-        expandedJobTypes.push(...synonyms)
-        // 역방향 동의어도 추가 (마케팅 → 브랜드마케팅 포함)
-        for (const [key, values] of Object.entries(JOB_TYPE_SYNONYMS)) {
-          if (values.includes(jobType)) {
-            expandedJobTypes.push(key)
-          }
-        }
-      }
-      expandedJobTypes = [...new Set(expandedJobTypes)] // 중복 제거
-    }
-
-    // 쿼리 빌드
-    let query = supabase
+    const { data: jobs, error: jobsError } = await supabase
       .from('jobs')
       .select('*')
       .eq('is_active', true)
-
-    // 직무 필터 적용 (depth_twos에 하나라도 매칭되면 OK)
-    if (expandedJobTypes.length > 0) {
-      // Supabase overlaps 연산자: 배열에 공통 요소가 있으면 true
-      query = query.overlaps('depth_twos', expandedJobTypes)
-    }
-
-    // 지역 필터 적용 (OR 조건)
-    if (preferences?.preferred_locations?.length) {
-      const locationFilters = preferences.preferred_locations
-        .map(loc => `location.ilike.%${loc}%`)
-        .join(',')
-      query = query.or(locationFilters)
-    }
-
-    const { data: jobs, error: jobsError } = await query
       .order('crawled_at', { ascending: false })
       .limit(fetchLimit)
 
