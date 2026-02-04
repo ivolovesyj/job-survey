@@ -64,7 +64,7 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
       className="w-full max-w-lg hover:shadow-xl transition-all duration-200 flex flex-col select-none border border-gray-200 bg-white"
       style={style}
     >
-      <div onClick={() => setIsExpanded(!isExpanded)} className="cursor-pointer flex-1">
+      <div className="flex-1">
         <div className="px-6 pt-6">
           <div className="flex items-center gap-2">
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">
@@ -221,8 +221,32 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
 
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
             <span className="text-xs text-gray-400">{job.source}</span>
-            {!isExpanded && <span className="text-xs text-blue-600 font-medium">더보기 ↓</span>}
-            {isExpanded && <span className="text-xs text-gray-400">접기 ↑</span>}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsExpanded(!isExpanded)
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${isExpanded
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 shadow-sm hover:shadow-md'
+                }`}
+            >
+              {isExpanded ? (
+                <>
+                  <span>접기</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                </>
+              ) : (
+                <>
+                  <span>더보기</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </>
+              )}
+            </button>
           </div>
         </CardContent>
       </div>
@@ -231,9 +255,8 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
         <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
-            className={`flex-1 h-12 border-red-200 hover:border-red-300 hover:bg-red-50 transition-all font-medium ${
-              clickedBtn === 'pass' ? 'animate-pulse bg-red-100 border-red-400 scale-95' : ''
-            }`}
+            className={`flex-1 h-12 border-red-200 hover:border-red-300 hover:bg-red-50 transition-all font-medium ${clickedBtn === 'pass' ? 'animate-pulse bg-red-100 border-red-400 scale-95' : ''
+              }`}
             onClick={(e) => {
               e.stopPropagation()
               handleButtonClick('pass', onPass)
@@ -245,9 +268,8 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
           </Button>
           <Button
             variant="outline"
-            className={`flex-1 h-12 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all font-medium ${
-              clickedBtn === 'hold' ? 'animate-pulse bg-yellow-100 border-yellow-400 scale-95' : ''
-            }`}
+            className={`flex-1 h-12 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all font-medium ${clickedBtn === 'hold' ? 'animate-pulse bg-yellow-100 border-yellow-400 scale-95' : ''
+              }`}
             onClick={(e) => {
               e.stopPropagation()
               handleButtonClick('hold', onHold)
@@ -258,9 +280,8 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
             <span className="text-sm text-gray-700">{clickedBtn === 'hold' ? '처리중...' : '보류'}</span>
           </Button>
           <Button
-            className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 transition-all font-medium ${
-              clickedBtn === 'apply' ? 'animate-pulse bg-green-500 scale-95' : ''
-            }`}
+            className={`flex-1 h-12 bg-blue-600 hover:bg-blue-700 transition-all font-medium ${clickedBtn === 'apply' ? 'animate-pulse bg-green-500 scale-95' : ''
+              }`}
             onClick={(e) => {
               e.stopPropagation()
               handleButtonClick('apply', onApply)

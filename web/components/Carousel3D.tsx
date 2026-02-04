@@ -56,7 +56,9 @@ export function Carousel3D({ jobs, currentIndex, onAction, onIndexChange }: Caro
       card.style.opacity = pos.opacity.toString()
       card.style.zIndex = pos.zIndex.toString()
       card.style.filter = pos.blur > 0 ? `blur(${pos.blur}px)` : 'none'
-      card.style.pointerEvents = index === currentIndex ? 'auto' : 'none'
+      // 현재 카드와 양옆 카드는 클릭 가능하도록
+      card.style.pointerEvents = Math.abs(index - currentIndex) <= 1 ? 'auto' : 'none'
+      card.style.cursor = index !== currentIndex ? 'pointer' : 'default'
     })
   }
 
@@ -141,6 +143,13 @@ export function Carousel3D({ jobs, currentIndex, onAction, onIndexChange }: Caro
             style={{
               transformStyle: 'preserve-3d',
               transition: 'transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease-out, filter 0.5s ease-out',
+            }}
+            onClick={(e) => {
+              // 옆 카드 클릭 시 해당 카드로 이동
+              if (index !== currentIndex && Math.abs(index - currentIndex) === 1) {
+                e.stopPropagation()
+                onIndexChange(index)
+              }
             }}
           >
             <JobCard
