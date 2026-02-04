@@ -522,14 +522,17 @@ export async function GET(request: Request) {
       .order('crawled_at', { ascending: false })
       .limit(fetchLimit)
 
-    // 직무 필터 (depth_twos에 포함된 값이 있는지)
+    // 직무 필터 (JSONB ?| 연산자 사용)
     if (preferences?.preferred_job_types?.length) {
-      query = query.overlaps('depth_twos', preferences.preferred_job_types)
+      // depth_twos ?| array['value1', 'value2'] 형태로 필터링
+      const jobTypesArray = `{${preferences.preferred_job_types.map(t => `"${t}"`).join(',')}}`
+      query = query.or(`depth_twos.cs.${jobTypesArray},depth_ones.cs.${jobTypesArray}`)
     }
 
-    // 지역 필터
+    // 지역 필터 (JSONB ?| 연산자 사용)
     if (preferences?.preferred_locations?.length) {
-      query = query.overlaps('regions', preferences.preferred_locations)
+      const locationsArray = `{${preferences.preferred_locations.map(l => `"${l}"`).join(',')}}`
+      query = query.filter('regions', 'cs', locationsArray)
     }
 
     console.log('[API /jobs] Query filters:', {
