@@ -625,13 +625,28 @@ export async function GET(request: Request) {
       console.error('[API /jobs] RPC error code:', jobsError?.code)
       console.error('[API /jobs] RPC params were:', JSON.stringify(rpcParams, null, 2))
 
-      // Fallback: 직접 쿼리 (RPC 함수 없을 때)
-      const { data: fallbackJobs, error: fallbackError } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('is_active', true)
-        .order('crawled_at', { ascending: false })
-        .limit(fetchLimit)
+      // Timeout 에러인 경우 limit을 줄여서 재시도
+      if (jobsError.code === '57014') {
+        console.log('[API /jobs] Timeout detected, retrying with reduced limit...')
+        const reducedParams = { ...rpcParams, p_limit: 500 }
+        const { data: retryJobs, error: retryError } = await supabase.rpc('get_filtered_jobs', reducedParams) as { data: JobRow[] | null, error: any }
+
+        if (!retryError && retryJobs && retryJobs.length > 0) {
+          console.log('[API /jobs] Retry successful with', retryJobs.length, 'jobs')
+          jobs = retryJobs
+        }
+      }
+
+      // 여전히 에러거나 빈 결과면 Fallback으로
+      if (!jobs || jobs.length === 0) {
+        console.log('[API /jobs] Using fallback query with limit 500')
+        // Fallback: 직접 쿼리 (limit 줄여서)
+        const { data: fallbackJobs, error: fallbackError } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('is_active', true)
+          .order('crawled_at', { ascending: false })
+          .limit(500)
 
       if (fallbackError) {
         console.error('Fallback query error:', fallbackError)
