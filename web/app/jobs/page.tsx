@@ -373,6 +373,9 @@ export default function Home() {
       const { data: { session } } = await supabase.auth.getSession()
       let token = session?.access_token
 
+      console.log('[fetchJobs] Session:', session ? 'exists' : 'null')
+      console.log('[fetchJobs] Token:', token ? 'exists' : 'null')
+
       const offset = append ? offsetRef.current : 0
       const response = await fetch(`/api/jobs?limit=20&offset=${offset}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
