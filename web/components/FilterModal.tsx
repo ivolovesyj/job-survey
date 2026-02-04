@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { X as XIcon, Check, Search } from 'lucide-react'
 
@@ -54,32 +54,39 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
   // 검색
   const [searchQuery, setSearchQuery] = useState('')
 
-  // filters 변경 시 로컬 상태 업데이트 (모달이 열릴 때만)
+  // 이전 isOpen 값을 추적하여 모달이 열릴 때만 초기화
+  const prevIsOpenRef = useRef(false)
+
+  // filters 변경 시 로컬 상태 업데이트 (모달이 닫혔다가 다시 열릴 때만)
   useEffect(() => {
-    if (!isOpen || !options || !filters) return
+    // 모달이 닫힌 상태에서 열린 상태로 변경될 때만 초기화
+    if (isOpen && !prevIsOpenRef.current && options && filters) {
+      // 직무
+      const displayJobTypes = filters.preferred_job_types?.map(job => job.replace(/_/g, '·')) || []
+      const depth2s: string[] = []
+      displayJobTypes.forEach(job => {
+        if (!options.depth_ones.includes(job)) {
+          depth2s.push(job)
+        }
+      })
+      setSelectedDepthTwos(depth2s)
 
-    // 직무
-    const displayJobTypes = filters.preferred_job_types?.map(job => job.replace(/_/g, '·')) || []
-    const depth2s: string[] = []
-    displayJobTypes.forEach(job => {
-      if (!options.depth_ones.includes(job)) {
-        depth2s.push(job)
-      }
-    })
-    setSelectedDepthTwos(depth2s)
+      // 경력
+      setSelectedCareers(filters.career_level ? filters.career_level.split(',').filter(Boolean) : ['경력무관'])
 
-    // 경력
-    setSelectedCareers(filters.career_level ? filters.career_level.split(',').filter(Boolean) : ['경력무관'])
+      // 지역
+      setSelectedRegions(filters.preferred_locations || [])
 
-    // 지역
-    setSelectedRegions(filters.preferred_locations || [])
+      // 고용형태
+      setSelectedEmploymentTypes(filters.work_style || [])
 
-    // 고용형태
-    setSelectedEmploymentTypes(filters.work_style || [])
+      // 기업 유형
+      setSelectedCompanyTypes(filters.preferred_company_types || [])
+    }
 
-    // 기업 유형
-    setSelectedCompanyTypes(filters.preferred_company_types || [])
-  }, [isOpen, filters, options]) // isOpen, filters, options를 dependency로 설정
+    // 현재 isOpen 값을 저장
+    prevIsOpenRef.current = isOpen
+  }, [isOpen, filters, options])
 
   const handleSave = () => {
     const finalJobTypes = selectedDepthTwos.map(job => job.replace(/·/g, '_'))
