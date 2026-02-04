@@ -372,6 +372,7 @@ function scoreJob(
 // ============================================
 
 export async function GET(request: Request) {
+  const startTime = Date.now()
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -381,7 +382,7 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.replace('Bearer ', '')
 
-    console.log('[API /jobs] Token exists:', !!token)
+    console.log('[API /jobs] Start - Token exists:', !!token)
 
     // 토큰이 없으면 비로그인 사용자: 기본 공고 제공
     if (!token) {
@@ -465,6 +466,7 @@ export async function GET(request: Request) {
 
     // 토큰으로 직접 유저 확인
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    console.log(`[API /jobs] +${Date.now() - startTime}ms - Auth check done`)
 
     if (!user || userError) {
       console.log('[API /jobs] Auth failed:', userError?.message)
@@ -500,6 +502,8 @@ export async function GET(request: Request) {
         .eq('user_id', user.id),
     ])
 
+    console.log(`[API /jobs] +${Date.now() - startTime}ms - Parallel queries done`)
+
     const preferences: UserPreferences | null = prefsResult.data
     const keywordWeights: KeywordWeight[] = keywordsResult.data || []
     const companyPrefs: CompanyPref[] = companiesResult.data || []
@@ -522,10 +526,10 @@ export async function GET(request: Request) {
     console.log('RPC params:', JSON.stringify(rpcParams, null, 2))
 
     // 인덱스 추가 후 RPC 함수 사용
-    console.log('[API /jobs] Using RPC function with indexes')
+    const rpcStartTime = Date.now()
     let { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
 
-    console.log('[API /jobs] RPC returned:', jobs ? jobs.length : 0, 'jobs')
+    console.log(`[API /jobs] +${Date.now() - startTime}ms - RPC done (took ${Date.now() - rpcStartTime}ms), returned: ${jobs ? jobs.length : 0} jobs`)
 
     // jsonb 타입을 배열로 변환
     if (jobs && jobs.length > 0) {
@@ -603,6 +607,8 @@ export async function GET(request: Request) {
     // 7. 40점 이상 필터 + 페이지네이션
     const passedJobs = scoredJobs.filter(j => j.score >= 40)
     const paginatedJobs = passedJobs.slice(offset, offset + limit)
+
+    console.log(`[API /jobs] +${Date.now() - startTime}ms - Total done, returning ${paginatedJobs.length} jobs`)
 
     return NextResponse.json({
       jobs: paginatedJobs,
