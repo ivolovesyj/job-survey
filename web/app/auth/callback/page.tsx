@@ -22,24 +22,12 @@ export default function AuthCallback() {
           if (session?.access_token) {
             setStatus('로그인 성공! 확인 중...')
 
-            // 신규 회원인지 확인 (user_preferences 존재 여부)
-            const { data: prefs } = await supabase
-              .from('user_preferences')
-              .select('user_id')
-              .eq('user_id', session.user.id)
-              .single()
-
             // 세션이 확실히 저장된 후 이동
             await new Promise(r => setTimeout(r, 500))
 
-            if (!prefs) {
-              // 신규 회원 → 온보딩으로
-              setStatus('환영합니다! 설정 중...')
-              router.replace('/onboarding')
-            } else {
-              // 기존 회원 → 홈으로
-              router.replace('/')
-            }
+            // 모든 사용자를 홈으로 이동 (신규/기존 구분 없이)
+            setStatus('환영합니다!')
+            router.replace('/')
             return
           }
           await new Promise(r => setTimeout(r, interval))
