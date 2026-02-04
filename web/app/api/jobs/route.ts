@@ -509,39 +509,27 @@ export async function GET(request: Request) {
     const companyPrefs: CompanyPref[] = companiesResult.data || []
     const seenJobIds = new Set(seenResult.data?.map(a => a.job_id) || [])
 
-    // 5. 활성 공고 가져오기 (PostgreSQL 함수로 직무/지역 필터링)
+    // 5. 활성 공고 가져오기 (RPC 함수로 직무/지역 필터링)
     const fetchLimit = Math.max(2000, (offset + limit) * 5)
 
-    // 직접 쿼리로 변경 (RPC 오버헤드 제거)
-    const queryStartTime = Date.now()
+    const rpcStartTime = Date.now()
 
-    const jobTypes = preferences?.preferred_job_types || []
-    const locations = preferences?.preferred_locations || []
-
-    console.log('[API /jobs] Query filters:', { job_types: jobTypes, locations })
-
-    let query = supabase
-      .from('jobs')
-      .select('*')
-      .eq('is_active', true)
-
-    // 직무 필터: depth_twos 또는 depth_ones에 하나라도 포함되면 매칭
-    if (jobTypes.length > 0) {
-      const conditions = jobTypes.map(t => `depth_twos.cs.["${t}"],depth_ones.cs.["${t}"]`).join(',')
-      query = query.or(conditions)
+    // RPC 파라미터
+    const rpcParams = {
+      p_job_types: preferences?.preferred_job_types?.length
+        ? preferences.preferred_job_types
+        : null,
+      p_locations: preferences?.preferred_locations?.length
+        ? preferences.preferred_locations
+        : null,
+      p_limit: fetchLimit
     }
 
-    // 지역 필터: regions에 하나라도 포함되면 매칭
-    if (locations.length > 0) {
-      const conditions = locations.map(l => `regions.cs.["${l}"]`).join(',')
-      query = query.or(conditions)
-    }
+    console.log('[API /jobs] RPC params:', JSON.stringify(rpcParams))
 
-    query = query.order('crawled_at', { ascending: false }).limit(fetchLimit)
+    let { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
 
-    let { data: jobs, error: jobsError } = await query as { data: JobRow[] | null, error: any }
-
-    console.log(`[API /jobs] +${Date.now() - startTime}ms - Query done (took ${Date.now() - queryStartTime}ms), returned: ${jobs ? jobs.length : 0} jobs`)
+    console.log(`[API /jobs] +${Date.now() - startTime}ms - RPC done (took ${Date.now() - rpcStartTime}ms), returned: ${jobs ? jobs.length : 0} jobs`)
 
     // jsonb 타입을 배열로 변환
     if (jobs && jobs.length > 0) {
