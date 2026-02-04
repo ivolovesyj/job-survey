@@ -596,11 +596,17 @@ export async function GET(request: Request) {
     }
 
     // PostgreSQL RPC 함수 호출
-    const { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', {
+    const rpcParams = {
       p_job_types: expandedJobTypes.length > 0 ? expandedJobTypes : null,
-      p_locations: preferences?.preferred_locations || null,
+      p_locations: (preferences?.preferred_locations && preferences.preferred_locations.length > 0)
+        ? preferences.preferred_locations
+        : null,
       p_limit: fetchLimit
-    }) as { data: JobRow[] | null, error: any }
+    }
+
+    console.log('RPC params:', JSON.stringify(rpcParams, null, 2))
+
+    const { data: jobs, error: jobsError } = await supabase.rpc('get_filtered_jobs', rpcParams) as { data: JobRow[] | null, error: any }
 
     if (jobsError) {
       console.error('Jobs RPC error:', jobsError)
