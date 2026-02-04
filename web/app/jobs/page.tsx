@@ -570,10 +570,6 @@ export default function Home() {
         user_id: user.id,
         job_id: currentJob.id,
         action: action,
-        company: currentJob.company,
-        job_title: currentJob.title,
-        location: currentJob.location,
-        keywords: currentJob.reasons || [],
       })
 
       // 모든 액션을 saved_jobs에 저장 (pass 포함 - 지원관리에서 조회 가능)
