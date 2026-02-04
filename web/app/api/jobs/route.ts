@@ -603,8 +603,99 @@ export async function GET(request: Request) {
     }) as { data: JobRow[] | null, error: any }
 
     if (jobsError) {
-      console.error('Jobs query error:', jobsError)
-      return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 })
+      console.error('Jobs RPC error:', jobsError)
+      console.error('RPC 함수가 없거나 오류가 발생했습니다. docs/update-get-filtered-jobs-function.sql을 Supabase에서 실행하세요.')
+
+      // Fallback: 직접 쿼리 (RPC 함수 없을 때)
+      const { data: fallbackJobs, error: fallbackError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('is_active', true)
+        .order('crawled_at', { ascending: false })
+        .limit(fetchLimit)
+
+      if (fallbackError) {
+        console.error('Fallback query error:', fallbackError)
+        return NextResponse.json({ error: 'Failed to fetch jobs', details: fallbackError.message }, { status: 500 })
+      }
+
+      // Fallback 결과를 jobs 변수에 할당하여 계속 진행
+      const jobsResult = fallbackJobs as JobRow[]
+
+      // 필터링 로직을 여기서 직접 수행
+      let filteredJobs = jobsResult
+
+      // 직무 필터링
+      if (expandedJobTypes.length > 0) {
+        filteredJobs = filteredJobs.filter(job => {
+          const jobTypes = [...(job.depth_ones || []), ...(job.depth_twos || [])]
+          return expandedJobTypes.some(pref =>
+            jobTypes.some(jt => jt.toLowerCase().includes(pref.toLowerCase()))
+          )
+        })
+      }
+
+      // 지역 필터링
+      if (preferences?.preferred_locations?.length) {
+        filteredJobs = filteredJobs.filter(job => {
+          if (!job.regions?.length) return false
+          return preferences.preferred_locations!.some(loc =>
+            job.regions!.some(r => r.includes(loc))
+          )
+        })
+      }
+
+      const now = Date.now()
+      const scoredJobs = filteredJobs
+        .filter((job: JobRow) => !seenJobIds.has(job.id))
+        .map((job: JobRow) => {
+          const companyType = job.company_type || '기타'
+          const isInDB = job.company_type !== null && job.company_type !== '기타'
+          const { score, reasons, warnings, matchesFilter } = scoreJob(job, preferences, keywordWeights, companyPrefs, companyType, isInDB)
+          const isNew = (now - new Date(job.crawled_at).getTime()) < 24 * 60 * 60 * 1000
+
+          return {
+            id: job.id,
+            company: job.company,
+            company_image: job.company_image,
+            title: job.title,
+            location: job.location || '위치 미정',
+            score,
+            reason: reasons[0] || '추천 공고',
+            reasons,
+            warnings,
+            link: `https://zighang.com/recruitment/${job.id}`,
+            source: job.source,
+            crawledAt: job.crawled_at,
+            detail: job.detail,
+            depth_ones: job.depth_ones,
+            depth_twos: job.depth_twos,
+            keywords: job.keywords,
+            career_min: job.career_min,
+            career_max: job.career_max,
+            employee_types: job.employee_types,
+            deadline_type: job.deadline_type,
+            end_date: job.end_date,
+            is_new: isNew,
+            matchesFilter,
+          }
+        })
+        .filter(j => j.matchesFilter)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score
+          return new Date(b.crawledAt).getTime() - new Date(a.crawledAt).getTime()
+        })
+
+      const passedJobs = scoredJobs.filter(j => j.score >= 40)
+      const paginatedJobs = passedJobs.slice(offset, offset + limit)
+
+      return NextResponse.json({
+        jobs: paginatedJobs,
+        total: passedJobs.length,
+        limit,
+        offset,
+        hasMore: offset + limit < passedJobs.length,
+      })
     }
 
     if (!jobs || jobs.length === 0) {
