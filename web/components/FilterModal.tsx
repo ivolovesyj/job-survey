@@ -54,9 +54,9 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
   // 검색
   const [searchQuery, setSearchQuery] = useState('')
 
-  // filters 변경 시 로컬 상태 업데이트
+  // filters 변경 시 로컬 상태 업데이트 (모달이 열릴 때만)
   useEffect(() => {
-    if (!options || !filters) return
+    if (!isOpen || !options || !filters) return
 
     // 직무
     const displayJobTypes = filters.preferred_job_types?.map(job => job.replace(/_/g, '·')) || []
@@ -79,7 +79,7 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
 
     // 기업 유형
     setSelectedCompanyTypes(filters.preferred_company_types || [])
-  }, [filters, options])
+  }, [isOpen]) // isOpen만 dependency로 설정
 
   const handleSave = () => {
     const finalJobTypes = selectedDepthTwos.map(job => job.replace(/·/g, '_'))
@@ -161,8 +161,8 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
 
   const filteredDepthTwos = selectedDepthOne
     ? (options.depth_twos_map[selectedDepthOne] || []).filter(depthTwo =>
-        depthTwo.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      depthTwo.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : []
 
   return (
@@ -197,21 +197,19 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('job')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
-                  selectedCategory === 'job'
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${selectedCategory === 'job'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span>직무</span>
                   {getSelectionCount('job') > 0 && (
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        selectedCategory === 'job'
+                      className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === 'job'
                           ? 'bg-white/20 text-white'
                           : 'bg-blue-100 text-blue-700'
-                      }`}
+                        }`}
                     >
                       {getSelectionCount('job')}
                     </span>
@@ -224,21 +222,19 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('career')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
-                  selectedCategory === 'career'
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${selectedCategory === 'career'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span>경력</span>
                   {getSelectionCount('career') > 0 && (
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        selectedCategory === 'career'
+                      className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === 'career'
                           ? 'bg-white/20 text-white'
                           : 'bg-green-100 text-green-700'
-                      }`}
+                        }`}
                     >
                       {getSelectionCount('career')}
                     </span>
@@ -251,21 +247,19 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('region')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
-                  selectedCategory === 'region'
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${selectedCategory === 'region'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span>지역</span>
                   {getSelectionCount('region') > 0 && (
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        selectedCategory === 'region'
+                      className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === 'region'
                           ? 'bg-white/20 text-white'
                           : 'bg-purple-100 text-purple-700'
-                      }`}
+                        }`}
                     >
                       {getSelectionCount('region')}
                     </span>
@@ -278,21 +272,19 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('employment')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
-                  selectedCategory === 'employment'
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${selectedCategory === 'employment'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span>고용형태</span>
                   {getSelectionCount('employment') > 0 && (
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        selectedCategory === 'employment'
+                      className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === 'employment'
                           ? 'bg-white/20 text-white'
                           : 'bg-orange-100 text-orange-700'
-                      }`}
+                        }`}
                     >
                       {getSelectionCount('employment')}
                     </span>
@@ -305,21 +297,19 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                   setSelectedCategory('company')
                   setSelectedDepthOne(null)
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${
-                  selectedCategory === 'company'
+                className={`w-full text-left px-4 py-3 rounded-lg text-[15px] font-medium transition ${selectedCategory === 'company'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <span>기업 유형</span>
                   {getSelectionCount('company') > 0 && (
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        selectedCategory === 'company'
+                      className={`text-xs px-2 py-0.5 rounded-full ${selectedCategory === 'company'
                           ? 'bg-white/20 text-white'
                           : 'bg-teal-100 text-teal-700'
-                      }`}
+                        }`}
                     >
                       {getSelectionCount('company')}
                     </span>
@@ -355,11 +345,10 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={depthOne}
                         onClick={() => setSelectedDepthOne(depthOne)}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg text-[15px] transition ${
-                          selectedDepthOne === depthOne
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-[15px] transition ${selectedDepthOne === depthOne
                             ? 'bg-purple-50 text-purple-700 font-medium border border-purple-200'
                             : 'text-gray-700 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <span>{depthOne}</span>
@@ -393,11 +382,10 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={depthTwo}
                         onClick={() => toggleDepthTwo(depthTwo)}
-                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
-                          selectedDepthTwos.includes(depthTwo)
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${selectedDepthTwos.includes(depthTwo)
                             ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
-                        }`}
+                          }`}
                       >
                         {depthTwo}
                       </button>
@@ -425,11 +413,10 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={option.value}
                         onClick={() => toggleCareer(option.value)}
-                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
-                          selectedCareers.includes(option.value)
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${selectedCareers.includes(option.value)
                             ? 'bg-green-600 text-white border-green-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
-                        }`}
+                          }`}
                       >
                         {option.label}
                       </button>
@@ -446,11 +433,10 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={region}
                         onClick={() => toggleRegion(region)}
-                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
-                          selectedRegions.includes(region)
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${selectedRegions.includes(region)
                             ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
-                        }`}
+                          }`}
                       >
                         {region}
                       </button>
@@ -467,11 +453,10 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={type}
                         onClick={() => toggleEmploymentType(type)}
-                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
-                          selectedEmploymentTypes.includes(type)
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${selectedEmploymentTypes.includes(type)
                             ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-orange-400'
-                        }`}
+                          }`}
                       >
                         {type}
                       </button>
@@ -488,11 +473,10 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                       <button
                         key={type}
                         onClick={() => toggleCompanyType(type)}
-                        className={`px-4 py-2 rounded-full text-[15px] border transition ${
-                          selectedCompanyTypes.includes(type)
+                        className={`px-4 py-2 rounded-full text-[15px] border transition ${selectedCompanyTypes.includes(type)
                             ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
                             : 'bg-white text-gray-700 border-gray-300 hover:border-teal-400'
-                        }`}
+                          }`}
                       >
                         {type}
                       </button>

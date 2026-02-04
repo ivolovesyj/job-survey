@@ -58,17 +58,15 @@ export async function GET(request: Request) {
       depthTwosObj[one] = Array.from(twosSet).sort()
     })
 
-    // 고용형태 순서 정의
-    const employeeTypeOrder = ['정규직', '인턴', '계약직', '프리랜서', '일용직', '병역특례'];
+    // 고용형태 순서 및 허용 목록 정의
+    const allowedEmployeeTypes = ['정규직', '인턴', '계약직', '프리랜서', '일용직', '병역특례']
+    const employeeTypeOrder = allowedEmployeeTypes
+
     const filteredEmployeeTypes = Array.from(employeeTypesSet)
-      .filter(type => type !== 'contractor' && type !== 'temporary')
+      .filter(type => allowedEmployeeTypes.includes(type)) // 허용 목록에 있는 것만
       .sort((a, b) => {
         const indexA = employeeTypeOrder.indexOf(a);
         const indexB = employeeTypeOrder.indexOf(b);
-        // 순서에 없는 항목은 뒤로
-        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
         return indexA - indexB;
       })
 
