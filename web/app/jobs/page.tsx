@@ -325,7 +325,7 @@ function FilterSidebar({ filters, options, onSave, user }: {
             </div>
 
             <div className="overflow-y-auto max-h-[calc(80vh-140px)] p-6">
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 {options?.depth_ones.map(depthOne => {
                   const isExpanded = expandedCategories.has(depthOne)
                   const depthTwos = options.depth_twos_map[depthOne] || []
@@ -333,7 +333,7 @@ function FilterSidebar({ filters, options, onSave, user }: {
                   const selectedCount = depthTwos.filter((dt: string) => selectedDepthTwos.includes(dt)).length
 
                   return (
-                    <div key={depthOne} className="border rounded-lg overflow-hidden">
+                    <div key={depthOne} className={`border rounded-lg overflow-hidden ${isExpanded ? 'col-span-2' : ''}`}>
                       <button
                         onClick={() => toggleCategory(depthOne)}
                         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition"
