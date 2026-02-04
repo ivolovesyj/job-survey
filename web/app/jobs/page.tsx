@@ -468,8 +468,13 @@ export default function Home() {
   const [filterOptions, setFilterOptions] = useState<{ depth_ones: string[], depth_twos_map: Record<string, string[]>, regions: string[], employee_types: string[] } | null>(null)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
-  const [loadingMessage] = useState(() => getRandomLoadingMessage())
+  const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0])  // 초기값 고정 (hydration 에러 방지)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  // 클라이언트에서만 랜덤 메시지 선택 (hydration 에러 방지)
+  useEffect(() => {
+    setLoadingMessage(getRandomLoadingMessage())
+  }, [])
 
   // 페이지 로드 시 필터 옵션 로드
   useEffect(() => {
