@@ -35,7 +35,8 @@ export function Carousel3D({ jobs, currentIndex, onAction, onIndexChange }: Caro
       opacity = 0
     }
 
-    const blur = Math.abs(diff) === 1 ? 1 : 0
+    // 옆 카드 blur 제거 (클릭 가능하게)
+    const blur = 0
     const zIndex = 100 - Math.abs(diff) * 10
 
     return { x, z, scale, opacity, blur, zIndex }
@@ -149,6 +150,27 @@ export function Carousel3D({ jobs, currentIndex, onAction, onIndexChange }: Caro
               if (index !== currentIndex && Math.abs(index - currentIndex) === 1) {
                 e.stopPropagation()
                 onIndexChange(index)
+              }
+            }}
+            onTouchStart={(e) => {
+              // 카드 내에서도 스와이프 가능하게 이벤트 전파
+              if (index === currentIndex) {
+                handleDragStart(e.touches[0].clientX)
+              }
+            }}
+            onTouchEnd={(e) => {
+              if (index === currentIndex) {
+                handleDragEnd(e.changedTouches[0].clientX)
+              }
+            }}
+            onMouseDown={(e) => {
+              if (index === currentIndex) {
+                handleDragStart(e.clientX)
+              }
+            }}
+            onMouseUp={(e) => {
+              if (index === currentIndex) {
+                handleDragEnd(e.clientX)
               }
             }}
           >

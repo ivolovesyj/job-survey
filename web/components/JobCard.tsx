@@ -226,10 +226,7 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
                 e.stopPropagation()
                 setIsExpanded(!isExpanded)
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${isExpanded
-                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 shadow-sm hover:shadow-md'
-                }`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 shadow-sm hover:shadow-md"
             >
               {isExpanded ? (
                 <>
