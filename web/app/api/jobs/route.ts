@@ -459,8 +459,11 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.replace('Bearer ', '')
 
+    console.log('[API /jobs] Token exists:', !!token)
+
     // 토큰이 없으면 비로그인 사용자: 기본 공고 제공
     if (!token) {
+      console.log('[API /jobs] No token - using guest mode')
       const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
       const { data: jobs, error: jobsError } = await supabase
@@ -476,6 +479,7 @@ export async function GET(request: Request) {
       }
 
       if (!jobs || jobs.length === 0) {
+        console.log('[API /jobs] Guest mode - No jobs found')
         return NextResponse.json({
           jobs: [],
           total: 0,
@@ -484,6 +488,8 @@ export async function GET(request: Request) {
           message: 'No jobs available. Please run the crawler first.',
         })
       }
+
+      console.log('[API /jobs] Guest mode - Returning', jobs.length, 'jobs')
 
       // 비로그인 사용자: 최신순 공고, 기본 점수 50점
       const now = Date.now()
@@ -526,6 +532,7 @@ export async function GET(request: Request) {
     }
 
     // === 로그인 사용자: 맞춤형 추천 ===
+    console.log('[API /jobs] Authenticated user mode')
 
     // 토큰을 포함한 supabase 클라이언트 생성 (RLS 통과용)
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -538,9 +545,11 @@ export async function GET(request: Request) {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
 
     if (!user || userError) {
-      console.log('[Jobs API] Auth failed:', userError?.message)
+      console.log('[API /jobs] Auth failed:', userError?.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('[API /jobs] User authenticated:', user.id)
 
     // 병렬로 데이터 가져오기
     const [prefsResult, keywordsResult, companiesResult, seenResult] = await Promise.all([
