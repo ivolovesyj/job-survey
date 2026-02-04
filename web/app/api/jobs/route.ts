@@ -62,6 +62,76 @@ function jaroWinklerDistance(s1: string, s2: string): number {
 }
 
 // ============================================
+// 직무 동의어/관련어 매핑 (의미적 연관성 매칭용)
+// ============================================
+
+const JOB_TYPE_SYNONYMS: Record<string, string[]> = {
+  // 개발 분야
+  '프론트엔드': ['웹개발', '웹퍼블리싱', '퍼블리셔', 'UI개발', 'HTML/CSS', 'React', 'Vue', 'Angular', 'JavaScript', 'TypeScript'],
+  '백엔드': ['서버개발', 'API개발', '서버사이드', 'Node.js', 'Spring', 'Django', 'Java', 'Python', 'Go'],
+  '풀스택': ['프론트엔드', '백엔드', '웹개발', '서버개발', 'Full-Stack'],
+  '웹개발': ['프론트엔드', '백엔드', '풀스택', '웹퍼블리싱'],
+  '서버개발': ['백엔드', 'API개발', '서버사이드', '인프라'],
+  '모바일': ['iOS', 'Android', '앱개발', '모바일앱', 'React Native', 'Flutter', 'Swift', 'Kotlin'],
+  'iOS': ['모바일', '앱개발', 'Swift', 'Objective-C'],
+  'Android': ['모바일', '앱개발', 'Kotlin', 'Java'],
+  'AI/ML': ['머신러닝', '딥러닝', '인공지능', 'AI', 'ML', '데이터사이언스', 'NLP', 'CV'],
+  '머신러닝': ['AI/ML', '딥러닝', '인공지능', 'AI', 'ML', '데이터사이언스'],
+  '데이터': ['데이터분석', '데이터엔지니어', 'BI', 'SQL', '빅데이터', '데이터사이언스', 'ETL'],
+  '데이터분석': ['데이터', 'BI', 'SQL', '빅데이터', '데이터사이언티스트'],
+  'DevOps': ['인프라', 'SRE', '클라우드', 'AWS', 'GCP', 'Azure', '시스템엔지니어', 'CI/CD', 'Kubernetes'],
+  '클라우드': ['DevOps', 'AWS', 'GCP', 'Azure', '인프라'],
+  '보안': ['정보보안', '보안엔지니어', '시큐리티', 'Security', '보안개발'],
+  'QA': ['테스트', '품질관리', 'QA엔지니어', '자동화테스트', 'SDET'],
+  '게임': ['게임개발', '게임프로그래머', 'Unity', 'Unreal', '게임클라이언트', '게임서버'],
+  '임베디드': ['펌웨어', '하드웨어', 'IoT', '시스템프로그래밍', 'C/C++'],
+  // 비개발 분야
+  '디자인': ['UI/UX', 'UIUX', 'UX디자인', 'UI디자인', '프로덕트디자인', '그래픽디자인', '시각디자인'],
+  'UI/UX': ['디자인', 'UX디자인', 'UI디자인', '프로덕트디자인', '서비스디자인'],
+  '기획': ['PM', 'PO', '프로덕트매니저', '서비스기획', '전략기획', '프로젝트매니저'],
+  'PM': ['기획', 'PO', '프로덕트매니저', '프로젝트매니저'],
+  'PO': ['기획', 'PM', '프로덕트오너', '프로덕트매니저'],
+  '마케팅': ['퍼포먼스마케팅', '콘텐츠마케팅', '그로스', '브랜드마케팅', 'SNS마케팅', '디지털마케팅'],
+  '영업': ['세일즈', 'Sales', 'BD', '사업개발', '비즈니스개발'],
+  'HR': ['인사', '채용', '인사담당', 'HRBP', '조직문화'],
+  '재무': ['회계', '경리', 'Finance', 'CFO', '재무회계'],
+}
+
+/**
+ * 사용자 선호 직무와 공고 직무 간의 의미적 연관성 확인
+ * @returns 매칭 점수 (0: 불일치, 1: 동의어 매칭, 2: 역방향 매칭)
+ */
+function checkSemanticMatch(userPref: string, jobTypes: string[]): number {
+  const prefLower = userPref.toLowerCase()
+  const synonyms = JOB_TYPE_SYNONYMS[userPref] || []
+  const synonymsLower = synonyms.map(s => s.toLowerCase())
+
+  for (const jobType of jobTypes) {
+    const jobTypeLower = jobType.toLowerCase()
+
+    // 1. 정방향 동의어 매칭: 사용자 선택의 동의어가 공고에 있는지
+    if (synonymsLower.some(syn =>
+      jobTypeLower.includes(syn) || syn.includes(jobTypeLower)
+    )) {
+      return 1
+    }
+
+    // 2. 역방향 매칭: 공고 타입의 동의어에 사용자 선택이 있는지
+    for (const [key, values] of Object.entries(JOB_TYPE_SYNONYMS)) {
+      const keyLower = key.toLowerCase()
+      const valuesLower = values.map(v => v.toLowerCase())
+
+      if ((jobTypeLower.includes(keyLower) || keyLower.includes(jobTypeLower)) &&
+        valuesLower.some(v => prefLower.includes(v) || v.includes(prefLower))) {
+        return 2
+      }
+    }
+  }
+
+  return 0
+}
+
+// ============================================
 // 점수 계산 로직 (사용자 선호도 기반)
 // ============================================
 
@@ -126,47 +196,87 @@ function scoreJob(
     return { score: 50, reasons: ['기본 추천'], warnings: [], matchesFilter: true }
   }
 
-  // 1. 직무 매칭 (preferred_job_types vs depth_twos만) - 필수 필터
-  // 소분류(depth_twos)만 매칭 - Jaro-Winkler 유사도 기반 매칭 (임계값 0.85)
+  // 1. 직무 매칭 (preferred_job_types) - 필수 필터
+  // 다층 매칭: depth_twos (우선) > jobText (보조) > depth_ones (참고)
   if (prefs.preferred_job_types?.length) {
-    // 공고의 소분류만 사용 (대분류는 제외)
     const jobDepthTwos = job.depth_twos || []
+    const jobDepthOnes = job.depth_ones || []
     let jobMatched = false
     let bestMatchScore = 0
     let bestMatchName = ''
+    let matchType = ''
 
     for (const prefType of prefs.preferred_job_types) {
       const prefLower = prefType.toLowerCase()
 
-      // 1) 정확히 일치 또는 부분 문자열 매칭 (가장 강력)
-      const exactMatch = jobDepthTwos.some(t => {
+      // 1단계: depth_twos에서 정확 매칭 (최우선 - 15점)
+      const exactMatchInDepthTwos = jobDepthTwos.some(t => {
         const jobTypeLower = t.toLowerCase()
         return jobTypeLower === prefLower ||
-               jobTypeLower.includes(prefLower) ||
-               prefLower.includes(jobTypeLower)
-      }) || jobText.includes(prefLower)
+          jobTypeLower.includes(prefLower) ||
+          prefLower.includes(jobTypeLower)
+      })
 
-      if (exactMatch) {
+      if (exactMatchInDepthTwos) {
         score += 15
         reasons.push(`✓ ${prefType}`)
         jobMatched = true
         break
       }
 
-      // 2) Jaro-Winkler 유사도 매칭 (임계값 0.85)
+      // 2단계: jobText에서 매칭 (의미적 연관성 - 10점)
+      if (jobText.includes(prefLower)) {
+        score += 10
+        reasons.push(`✓ ${prefType} (본문)`)
+        jobMatched = true
+        break
+      }
+
+      // 2.5단계: 동의어/관련어 매칭 (의미적 연관성 - 8점)
+      const semanticMatchScore = checkSemanticMatch(prefType, jobDepthTwos)
+      if (semanticMatchScore > 0) {
+        score += 8
+        reasons.push(`✓ ${prefType} (연관)`)
+        jobMatched = true
+        break
+      }
+
+      // 3단계: depth_twos에서 Jaro-Winkler 유사도 매칭 (임계값 0.85 - 12점)
       for (const jobDepthTwo of jobDepthTwos) {
         const similarity = jaroWinklerDistance(prefLower, jobDepthTwo.toLowerCase())
         if (similarity >= 0.85 && similarity > bestMatchScore) {
           bestMatchScore = similarity
           bestMatchName = prefType
+          matchType = 'similarity'
         }
+      }
+
+      // 4단계: depth_ones에서 매칭 (대분류 일치 - 약한 신호, 5점)
+      // 예: 사용자가 "프론트엔드" 선택, 공고에 "개발" 대분류만 있는 경우
+      const matchInDepthOnes = jobDepthOnes.some(d => {
+        const dLower = d.toLowerCase()
+        // "개발" 대분류 안에 프론트엔드가 속하는지 의미적 연관성 체크
+        return prefLower.includes(dLower) || dLower.includes(prefLower)
+      })
+
+      if (!jobMatched && matchInDepthOnes && bestMatchScore < 0.85) {
+        bestMatchScore = 0.7 // 임계값보다 낮지만 참고용
+        bestMatchName = prefType
+        matchType = 'depth_one'
       }
     }
 
     // 유사도 매칭 성공
     if (!jobMatched && bestMatchScore >= 0.85) {
-      score += 12 // 정확 매칭보다 약간 낮은 점수
+      score += 12
       reasons.push(`✓ ${bestMatchName} (유사)`)
+      jobMatched = true
+    }
+
+    // 약한 매칭 (대분류만 일치)
+    if (!jobMatched && matchType === 'depth_one') {
+      score += 5
+      reasons.push(`✓ ${bestMatchName} (관련)`)
       jobMatched = true
     }
 
