@@ -72,17 +72,17 @@ const statusConfig: Record<
   },
 }
 
+// 드롭다운에 표시할 상태들 (자주 쓰는 순서)
 const STATUS_ORDER: ApplicationStatus[] = [
-  'pending',
-  'hold',
-  'applied',
-  'document_pass',
-  'interviewing',
-  'final',
-  'accepted',
-  'rejected',
-  'not_applying',
-  'passed',
+  'pending',      // 지원 예정
+  'applied',      // 지원 완료
+  'document_pass', // 서류 합격
+  'interviewing', // 면접 중
+  'final',        // 최종 면접
+  'accepted',     // 합격
+  'rejected',     // 불합격
+  'hold',         // 보류
+  'passed',       // 지원안함
 ]
 
 export function StatusBadge({ status, editable, onStatusChange }: StatusBadgeProps) {

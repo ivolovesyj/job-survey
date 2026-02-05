@@ -65,12 +65,11 @@ export function ApplicationToolbar({
           {onAddExternal && (
             <Button
               size="sm"
-              variant="outline"
               onClick={onAddExternal}
-              className="text-xs whitespace-nowrap"
+              className="text-xs whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
-              외부 공고
+              외부 공고 추가하기
             </Button>
           )}
         </div>

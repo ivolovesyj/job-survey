@@ -109,7 +109,7 @@ export function PinnedSection({
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-2 px-1">
-        <span className="text-xs font-medium text-blue-600">📌 고정됨 ({pinnedApps.length})</span>
+        <span className="text-xs font-medium text-yellow-600">⭐ 고정됨 ({pinnedApps.length})</span>
         <span className="text-xs text-gray-400">드래그하여 순서 변경</span>
       </div>
       <DndContext

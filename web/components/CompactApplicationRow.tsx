@@ -5,7 +5,7 @@ import { ApplicationWithJob, ApplicationStatus, RequiredDocuments } from '@/type
 import { StatusBadge } from './StatusBadge'
 import { DeadlineBadge } from './DeadlineBadge'
 import { Button } from '@/components/ui/button'
-import { Pin, ChevronDown, ChevronUp, ExternalLink, Trash2, MessageSquare } from 'lucide-react'
+import { Star, ChevronDown, ChevronUp, ExternalLink, Trash2, MessageSquare } from 'lucide-react'
 
 interface CompactApplicationRowProps {
   application: ApplicationWithJob
@@ -45,17 +45,17 @@ export function CompactApplicationRow({
         className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* 핀 */}
+        {/* 별표 고정 */}
         {onTogglePin && (
           <button
             onClick={(e) => {
               e.stopPropagation()
               onTogglePin(saved_job.id)
             }}
-            className={`flex-shrink-0 p-0.5 rounded ${isPinned ? 'text-blue-600' : 'text-gray-300 hover:text-gray-500'}`}
+            className={`flex-shrink-0 p-0.5 rounded ${isPinned ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
             title={isPinned ? '고정 해제' : '상위 고정'}
           >
-            <Pin className="w-4 h-4" style={isPinned ? { fill: 'currentColor' } : {}} />
+            <Star className="w-4 h-4" style={isPinned ? { fill: 'currentColor' } : {}} />
           </button>
         )}
 
