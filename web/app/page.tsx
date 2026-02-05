@@ -64,6 +64,10 @@ export default function HomePage() {
   const [showHeroBanner, setShowHeroBanner] = useState(true)
   const [mounted, setMounted] = useState(false)
 
+  // 데이터 로드 완료 여부 (탭 전환 시 재로드 방지)
+  const dataLoadedRef = useRef(false)
+  const lastUserIdRef = useRef<string | null>(null)
+
   // Phase 1: 검색, 정렬, 뷰 모드
   const [searchQuery, setSearchQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('created_at')
@@ -100,8 +104,16 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!authLoading && user) {
+      // 같은 유저이고 이미 데이터 로드했으면 스킵 (탭 전환 시 재로드 방지)
+      if (dataLoadedRef.current && lastUserIdRef.current === user.id) {
+        setLoading(false)
+        return
+      }
+      lastUserIdRef.current = user.id
       fetchApplications()
     } else if (!authLoading && !user) {
+      dataLoadedRef.current = false
+      lastUserIdRef.current = null
       setLoading(false)
     }
   }, [user, authLoading])
@@ -172,6 +184,7 @@ export default function HomePage() {
       setPinOrder(pinnedJobs.sort((a, b) => a.pin_order - b.pin_order).map((j) => j.id))
 
       setApplications(applicationsData)
+      dataLoadedRef.current = true  // 데이터 로드 완료 표시
     } catch (error) {
       console.error('Failed to fetch applications:', error)
     } finally {
