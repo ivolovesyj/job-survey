@@ -331,14 +331,20 @@ function scoreJob(
   }
 
   // 3.7 학력 필터 (엄격한 필터링 - 정확히 일치만)
-  if (prefs.preferred_education?.length && job.education) {
-    const match = prefs.preferred_education.includes(job.education)
-    
-    if (!match) {
+  if (prefs.preferred_education?.length) {
+    if (!job.education) {
+      // education 정보가 없는 공고는 필터링 제외
       matchesFilter = false
-      warnings.push(`⚠️ ${job.education} 요구 (학력 불일치)`)
+      warnings.push(`⚠️ 학력 정보 없음`)
     } else {
-      reasons.push(`학력 ${job.education}`)
+      const match = prefs.preferred_education.includes(job.education)
+      
+      if (!match) {
+        matchesFilter = false
+        warnings.push(`⚠️ ${job.education} 요구 (학력 불일치)`)
+      } else {
+        reasons.push(`학력 ${job.education}`)
+      }
     }
   }
 
