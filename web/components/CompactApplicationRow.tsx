@@ -100,16 +100,13 @@ export function CompactApplicationRow({
         </div>
 
         {/* 마감일 */}
-        <div className="flex-shrink-0 hidden sm:block">
-          <DeadlineBadge deadline={saved_job.deadline} />
+        <div className="flex-shrink-0">
+          {saved_job.deadline ? (
+            <DeadlineBadge deadline={saved_job.deadline} />
+          ) : (
+            <span className="text-xs text-gray-400">마감일 없음</span>
+          )}
         </div>
-
-        {/* 적합도 */}
-        {saved_job.score && saved_job.score > 50 && (
-          <span className="flex-shrink-0 text-xs font-medium text-blue-600 w-8 text-right">
-            {saved_job.score}%
-          </span>
-        )}
 
         {/* 메모 아이콘 */}
         {application.notes && (
