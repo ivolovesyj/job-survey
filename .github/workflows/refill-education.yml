@@ -1,0 +1,44 @@
+name: Refill Education Data
+
+on:
+  workflow_dispatch: # 수동 실행
+
+jobs:
+  refill-education:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 # 6시간 타임아웃
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install p-limit
+
+      - name: Run education refill crawler
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          echo "🚀 Education 재크롤링 시작"
+          echo "================================================"
+          node src/crawlers/refill-education.js
+          echo "================================================"
+          echo "✅ 완료"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refill-education-logs
+          path: |
+            refill-education*.log
+          retention-days: 7
