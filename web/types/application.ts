@@ -34,12 +34,12 @@ export interface RequiredDocuments {
 export interface SavedJob {
   id: string
   user_id: string
-  job_id: string
-  source: string
-  company: string
-  title: string
-  location: string
-  link: string
+  job_id: string | null // null for external jobs
+  source?: string
+  company?: string
+  title?: string
+  location?: string
+  link?: string
   deadline?: string | null
   score?: number
   reason?: string
@@ -48,7 +48,17 @@ export interface SavedJob {
   description?: string
   detail?: JobDetail | null
   created_at: string
-  updated_at: string
+  updated_at?: string
+  // External job fields
+  external_company?: string
+  external_title?: string
+  external_url?: string
+  external_location?: string
+  external_deadline?: string | null
+  is_external?: boolean
+  source_url?: string
+  is_pinned?: boolean
+  pin_order?: number | null
 }
 
 export interface ApplicationStatusData {
