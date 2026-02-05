@@ -40,16 +40,25 @@ export function DeadlineBadge({ deadline, deadlineType, editable, onDeadlineChan
     // 마감일 없음 - 편집 가능시 클릭하면 날짜 선택
     if (editable && onDeadlineChange) {
       return (
-        <label className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-400 border border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors`}>
-          마감일 없음
+        <div className="relative inline-flex">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              inputRef.current?.showPicker()
+            }}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-400 border border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
+          >
+            마감일 없음
+          </button>
           <input
             ref={inputRef}
             type="date"
-            className="sr-only"
+            className="absolute opacity-0 w-0 h-0"
             onChange={handleDateChange}
             onClick={(e) => e.stopPropagation()}
           />
-        </label>
+        </div>
       )
     }
     return null
