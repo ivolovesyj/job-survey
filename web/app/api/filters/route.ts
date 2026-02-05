@@ -6,9 +6,10 @@ import { JOB_CATEGORIES, EMPLOYMENT_TYPES, COMPANY_TYPES, REGIONS, EDUCATION_LEV
 export async function GET(request: Request) {
   try {
     // 직무 카테고리 변환: { "개발": ["프론트엔드", "백엔드", ...] }
+    // 소분류는 정렬하지 않고 원본 순서 유지 ('전체'가 첫 번째)
     const depthTwosMap: Record<string, string[]> = {}
     Object.entries(JOB_CATEGORIES).forEach(([category, subCategories]) => {
-      depthTwosMap[category] = [...subCategories].sort()
+      depthTwosMap[category] = [...subCategories]
     })
 
     return NextResponse.json({
