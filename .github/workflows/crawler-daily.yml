@@ -2,9 +2,10 @@ name: Daily mode crawler
 
 on:
   # 매일 새벽 3시에 자동 실행 (KST 기준)
+  workflow_dispatch:
   schedule:
     - cron: '0 18 * * *'  # UTC 18:00 = KST 03:00
-
+  
 jobs:
   crawl:
     runs-on: ubuntu-latest
