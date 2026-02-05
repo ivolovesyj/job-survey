@@ -33,6 +33,13 @@ export function CompactApplicationRow({
   const [notes, setNotes] = useState(application.notes || '')
   const { saved_job } = application
 
+  // 외부 공고와 일반 공고 모두 지원
+  const company = saved_job.external_company || saved_job.company || '회사명 없음'
+  const title = saved_job.external_title || saved_job.title || '직무명 없음'
+  const location = saved_job.external_location || saved_job.location
+  const deadline = saved_job.external_deadline || saved_job.deadline
+  const jobUrl = saved_job.external_url || saved_job.link
+
   const handleSaveNotes = () => {
     onUpdateNotes(application.id, notes)
     setEditingNotes(false)
@@ -61,12 +68,12 @@ export function CompactApplicationRow({
 
         {/* 회사명 */}
         <span className="flex-shrink-0 w-24 sm:w-32 text-sm font-semibold text-gray-900 truncate">
-          {saved_job.company}
+          {company}
         </span>
 
         {/* 공고명 */}
         <span className="flex-1 text-sm text-gray-600 truncate min-w-0">
-          {saved_job.title}
+          {title}
         </span>
 
         {/* 메모 아이콘 */}
@@ -76,7 +83,7 @@ export function CompactApplicationRow({
 
         {/* 위치 - 고정 너비 */}
         <span className="hidden md:block flex-shrink-0 text-xs text-gray-500 w-14 text-right">
-          {saved_job.location || '-'}
+          {location || '-'}
         </span>
 
         {/* 상태 - 고정 너비 */}
@@ -91,7 +98,7 @@ export function CompactApplicationRow({
         {/* 마감일 - 고정 너비 */}
         <div className="hidden sm:flex flex-shrink-0 w-[88px] justify-end">
           <DeadlineBadge
-            deadline={saved_job.deadline}
+            deadline={deadline}
             editable
             onDeadlineChange={(newDeadline) => onUpdateDeadline(saved_job.id, newDeadline)}
           />
@@ -109,9 +116,9 @@ export function CompactApplicationRow({
           {/* 액션 버튼 */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1">
-              {saved_job.link && (
+              {jobUrl && (
                 <a
-                  href={saved_job.link}
+                  href={jobUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
