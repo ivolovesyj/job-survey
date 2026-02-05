@@ -330,16 +330,14 @@ function scoreJob(
     }
   }
 
-  // 3.7 학력 필터 (엄격한 필터링)
+  // 3.7 학력 필터 (엄격한 필터링 - 정확히 일치만)
   if (prefs.preferred_education?.length && job.education) {
-    // '무관'은 모든 학력에 매칭됨
-    const isFlexible = job.education === '무관' || prefs.preferred_education.includes('무관')
-    const match = isFlexible || prefs.preferred_education.includes(job.education)
+    const match = prefs.preferred_education.includes(job.education)
     
     if (!match) {
       matchesFilter = false
       warnings.push(`⚠️ ${job.education} 요구 (학력 불일치)`)
-    } else if (!isFlexible) {
+    } else {
       reasons.push(`학력 ${job.education}`)
     }
   }
