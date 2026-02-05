@@ -787,21 +787,58 @@ export default function Home() {
 
         {/* 메인 컨텐츠: 3D 캐러셀 또는 필터 설정 안내 */}
         <main className="flex-1 flex flex-col items-start justify-start p-4 pt-12 relative overflow-hidden">
+          {/* 모바일 전용 플로팅 필터 버튼 */}
+          <button
+            onClick={() => setShowFilterModal(true)}
+            className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+          >
+            <SlidersHorizontal className="w-6 h-6" />
+            {filters && (
+              (() => {
+                let count = 0
+                if (filters?.preferred_job_types?.length) count += filters.preferred_job_types.length
+                if (filters?.career_level && filters.career_level !== '경력무관') {
+                  count += filters.career_level.split(',').filter(Boolean).length
+                }
+                if (filters?.preferred_locations?.length) count += filters.preferred_locations.length
+                if (filters?.work_style?.length) count += filters.work_style.length
+                if (filters?.preferred_company_types?.length) count += filters.preferred_company_types.length
+                if (filters?.preferred_education?.length) count += filters.preferred_education.length
+
+                return count > 0 ? (
+                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {count}
+                  </span>
+                ) : null
+              })()
+            )}
+          </button>
+
           {hasNoFilters ? (
             // 필터 미설정 시 안내 메시지
             <div className="w-full max-w-2xl mx-auto mt-20 text-center space-y-6">
               <div className="text-7xl">🎯</div>
               <h2 className="text-3xl font-bold text-gray-900">필터를 선택하고<br />맞춤형 공고를 받아보세요!</h2>
               <p className="text-lg text-gray-600">
-                왼쪽 필터에서 원하는 직무, 경력, 지역을 선택하면<br />
+                <span className="hidden lg:inline">왼쪽 필터에서</span>
+                <span className="lg:hidden">아래 버튼을 눌러</span> 원하는 직무, 경력, 지역을 선택하면<br />
                 나에게 딱 맞는 채용공고를 추천해드립니다.
               </p>
               <div className="pt-4">
-                <div className="inline-block px-6 py-3 bg-purple-50 border border-purple-200 rounded-lg">
+                {/* PC용 안내 */}
+                <div className="hidden lg:inline-block px-6 py-3 bg-purple-50 border border-purple-200 rounded-lg">
                   <p className="text-sm text-purple-800 font-medium">
                     👈 왼쪽 사이드바에서 필터를 설정해주세요
                   </p>
                 </div>
+                {/* 모바일용 버튼 */}
+                <button
+                  onClick={() => setShowFilterModal(true)}
+                  className="lg:hidden inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg transition-all"
+                >
+                  <SlidersHorizontal className="w-5 h-5" />
+                  필터 설정하기
+                </button>
               </div>
             </div>
           ) : loading ? (
