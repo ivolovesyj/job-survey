@@ -47,9 +47,9 @@ export function DeadlineBadge({ deadline, deadlineType, editable, onDeadlineChan
               e.stopPropagation()
               inputRef.current?.showPicker()
             }}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-400 border border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-50 text-gray-400 border border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors whitespace-nowrap"
           >
-            마감일 없음
+            마감일없음
           </button>
           <input
             ref={inputRef}
@@ -96,7 +96,7 @@ export function DeadlineBadge({ deadline, deadlineType, editable, onDeadlineChan
   // 마감됨
   if (diffDays < 0) {
     return (
-      <Wrapper className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
+      <Wrapper className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200 whitespace-nowrap">
         마감됨
       </Wrapper>
     )
@@ -105,7 +105,7 @@ export function DeadlineBadge({ deadline, deadlineType, editable, onDeadlineChan
   // D-day
   if (diffDays === 0) {
     return (
-      <Wrapper className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 border border-red-300 animate-pulse">
+      <Wrapper className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700 border border-red-300 animate-pulse whitespace-nowrap">
         🔴 D-Day
       </Wrapper>
     )
@@ -114,7 +114,7 @@ export function DeadlineBadge({ deadline, deadlineType, editable, onDeadlineChan
   // D-3 이하: 빨간색
   if (diffDays <= 3) {
     return (
-      <Wrapper className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 border border-red-300">
+      <Wrapper className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-red-100 text-red-700 border border-red-300 whitespace-nowrap">
         🔴 D-{diffDays}
       </Wrapper>
     )
@@ -123,17 +123,18 @@ export function DeadlineBadge({ deadline, deadlineType, editable, onDeadlineChan
   // D-7 이하: 노란색
   if (diffDays <= 7) {
     return (
-      <Wrapper className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-300">
+      <Wrapper className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-yellow-100 text-yellow-700 border border-yellow-300 whitespace-nowrap">
         🟡 D-{diffDays}
       </Wrapper>
     )
   }
 
-  // 그 외
-  const formatted = deadlineDate.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  // 그 외 - 간단하게 표시
+  const month = deadlineDate.getMonth() + 1
+  const day = deadlineDate.getDate()
   return (
-    <Wrapper className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-      📅 {formatted} (D-{diffDays})
+    <Wrapper className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-50 text-gray-600 border border-gray-200 whitespace-nowrap">
+      {month}/{day} (D-{diffDays})
     </Wrapper>
   )
 }

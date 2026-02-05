@@ -42,7 +42,7 @@ export function CompactApplicationRow({
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       {/* 컴팩트 행 */}
       <div
-        className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         {/* 핀 */}
@@ -55,12 +55,12 @@ export function CompactApplicationRow({
             className={`flex-shrink-0 p-0.5 rounded ${isPinned ? 'text-blue-600' : 'text-gray-300 hover:text-gray-500'}`}
             title={isPinned ? '고정 해제' : '상위 고정'}
           >
-            <Pin className="w-3.5 h-3.5" style={isPinned ? { fill: 'currentColor' } : {}} />
+            <Pin className="w-4 h-4" style={isPinned ? { fill: 'currentColor' } : {}} />
           </button>
         )}
 
         {/* 회사명 */}
-        <span className="flex-shrink-0 w-28 text-sm font-semibold text-gray-900 truncate">
+        <span className="flex-shrink-0 w-24 sm:w-32 text-sm font-semibold text-gray-900 truncate">
           {saved_job.company}
         </span>
 
@@ -71,16 +71,16 @@ export function CompactApplicationRow({
 
         {/* 메모 아이콘 */}
         {application.notes && (
-          <MessageSquare className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+          <MessageSquare className="w-4 h-4 text-blue-400 flex-shrink-0" />
         )}
 
         {/* 위치 - 고정 너비 */}
-        <span className="hidden sm:block flex-shrink-0 text-xs text-gray-500 w-16 text-center truncate">
+        <span className="hidden md:block flex-shrink-0 text-xs text-gray-500 w-14 text-right">
           {saved_job.location || '-'}
         </span>
 
         {/* 상태 - 고정 너비 */}
-        <div className="flex-shrink-0 w-20 flex justify-center">
+        <div className="flex-shrink-0 w-[72px] flex justify-end">
           <StatusBadge
             status={application.status}
             editable
@@ -89,7 +89,7 @@ export function CompactApplicationRow({
         </div>
 
         {/* 마감일 - 고정 너비 */}
-        <div className="flex-shrink-0 w-24 flex justify-center">
+        <div className="hidden sm:flex flex-shrink-0 w-[88px] justify-end">
           <DeadlineBadge
             deadline={saved_job.deadline}
             editable
@@ -98,7 +98,7 @@ export function CompactApplicationRow({
         </div>
 
         {/* 확장 아이콘 */}
-        <div className="flex-shrink-0 text-gray-400">
+        <div className="flex-shrink-0 text-gray-400 ml-1">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </div>
