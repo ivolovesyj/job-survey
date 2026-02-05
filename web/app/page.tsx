@@ -67,7 +67,7 @@ export default function HomePage() {
   // Phase 1: 검색, 정렬, 뷰 모드
   const [searchQuery, setSearchQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('created_at')
-  const [viewMode, setViewMode] = useState<ViewMode>('card')
+  const [viewMode, setViewMode] = useState<ViewMode>('compact')
 
   // Phase 2: 핀 상태 + 순서
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
