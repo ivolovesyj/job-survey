@@ -120,9 +120,30 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
   }
 
   const toggleDepthTwo = (depthTwo: string) => {
-    setSelectedDepthTwos(prev =>
-      prev.includes(depthTwo) ? prev.filter(d => d !== depthTwo) : [...prev, depthTwo]
-    )
+    // '전체'를 클릭한 경우
+    if (depthTwo === '전체' && selectedDepthOne && options) {
+      const allSubsInCategory = options.depth_twos_map[selectedDepthOne] || []
+      const subsWithoutAll = allSubsInCategory.filter(s => s !== '전체')
+
+      // 현재 카테고리의 모든 소분류가 이미 선택되어 있는지 확인
+      const allSelected = subsWithoutAll.every(sub => selectedDepthTwos.includes(sub))
+
+      if (allSelected) {
+        // 모두 선택되어 있으면 해제
+        setSelectedDepthTwos(prev => prev.filter(d => !subsWithoutAll.includes(d)))
+      } else {
+        // 선택되지 않았으면 모두 선택
+        setSelectedDepthTwos(prev => {
+          const filtered = prev.filter(d => !subsWithoutAll.includes(d))
+          return [...filtered, ...subsWithoutAll]
+        })
+      }
+    } else {
+      // 일반 소분류 토글
+      setSelectedDepthTwos(prev =>
+        prev.includes(depthTwo) ? prev.filter(d => d !== depthTwo) : [...prev, depthTwo]
+      )
+    }
   }
 
   const toggleCareer = (career: string) => {
@@ -426,18 +447,27 @@ export function FilterModal({ isOpen, onClose, filters, options, onSave }: Filte
                 <div>
                   <div className="text-[15px] font-semibold text-gray-700 mb-3">{selectedDepthOne}</div>
                   <div className="flex flex-wrap gap-2">
-                    {filteredDepthTwos.map(depthTwo => (
-                      <button
-                        key={depthTwo}
-                        onClick={() => toggleDepthTwo(depthTwo)}
-                        className={`px-4 py-2 rounded-full text-[15px] border transition ${selectedDepthTwos.includes(depthTwo)
-                            ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                            : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
-                          }`}
-                      >
-                        {depthTwo}
-                      </button>
-                    ))}
+                    {filteredDepthTwos.map(depthTwo => {
+                      // '전체'의 경우 모든 소분류가 선택되어 있는지 확인
+                      const isAllButton = depthTwo === '전체'
+                      const allSubsInCategory = options.depth_twos_map[selectedDepthOne] || []
+                      const subsWithoutAll = allSubsInCategory.filter(s => s !== '전체')
+                      const allSelected = isAllButton && subsWithoutAll.every(sub => selectedDepthTwos.includes(sub))
+                      const isSelected = isAllButton ? allSelected : selectedDepthTwos.includes(depthTwo)
+
+                      return (
+                        <button
+                          key={depthTwo}
+                          onClick={() => toggleDepthTwo(depthTwo)}
+                          className={`px-4 py-2 rounded-full text-[15px] border transition ${isSelected
+                              ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
+                            }`}
+                        >
+                          {depthTwo}
+                        </button>
+                      )
+                    })}
                     {filteredDepthTwos.length === 0 && searchQuery && (
                       <div className="w-full text-center text-gray-500 text-sm py-8">
                         검색 결과가 없습니다
