@@ -36,6 +36,14 @@ jobs:
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
       
+      - name: Download previous crawl state (for resume)
+        if: github.event.inputs.resume == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: crawl-state-latest
+          path: .
+        continue-on-error: true
+      
       - name: Run crawler with resume support
         run: |
           if [ "${{ github.event.inputs.resume }}" = "true" ]; then
@@ -56,14 +64,6 @@ jobs:
             echo "Crawl state saved for resume"
             echo "CRAWL_STATE_EXISTS=true" >> $GITHUB_ENV
           fi
-      
-      - name: Download previous crawl state (for resume)
-        if: github.event.inputs.resume == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: crawl-state-latest
-          path: .
-        continue-on-error: true
       
       - name: Upload crawl state artifact
         if: always() && env.CRAWL_STATE_EXISTS == 'true'
