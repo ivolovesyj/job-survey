@@ -12,6 +12,7 @@ export interface Job {
   id: string
   company: string
   company_image?: string
+  company_type?: string | null
   title: string
   location: string
   score: number

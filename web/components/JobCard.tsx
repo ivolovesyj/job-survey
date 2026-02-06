@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MapPin, ExternalLink, X, Briefcase, Clock, Check, Calendar } from 'lucide-react'
+import { MapPin, ExternalLink, X, Briefcase, Clock, Check, Calendar, Building2 } from 'lucide-react'
 import { Job } from '@/types/job'
 import { useState } from 'react'
 
@@ -82,6 +82,12 @@ export function JobCard({ job, onPass, onHold, onApply, disabled, style }: JobCa
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 text-gray-600 text-xs rounded-full border border-gray-200">
                 <Calendar className="w-3 h-3" />
                 {deadline}
+              </span>
+            )}
+            {job.company_type && job.company_type !== '기타' && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full border border-indigo-200">
+                <Building2 className="w-3 h-3" />
+                {job.company_type}
               </span>
             )}
           </div>
