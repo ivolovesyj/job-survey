@@ -314,7 +314,14 @@ function scoreJob(
         if (ws === 'temporary') return '계약직/일용직'
         return ws
       })
-      const match = normalizedPrefs.some(ws => job.employee_types!.includes(ws))
+
+      // 부분 문자열 매칭: '인턴'이 '전환형인턴', '체험형인턴' 등도 매칭
+      const match = normalizedPrefs.some(pref =>
+        job.employee_types!.some(jobType =>
+          jobType.includes(pref) || pref.includes(jobType)
+        )
+      )
+
       if (!match) {
         matchesFilter = false
         warnings.push(`⚠️ 고용형태 불일치`)
