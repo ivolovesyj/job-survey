@@ -309,14 +309,8 @@ function scoreJob(
       matchesFilter = false
       warnings.push(`⚠️ 고용형태 정보 없음`)
     } else {
-      const normalizedPrefs = prefs.work_style.map(ws => {
-        if (ws === 'contractor') return '프리랜서'
-        if (ws === 'temporary') return '계약직/일용직'
-        return ws
-      })
-
       // 부분 문자열 매칭: '인턴'이 '전환형인턴', '체험형인턴' 등도 매칭
-      const match = normalizedPrefs.some(pref =>
+      const match = prefs.work_style.some(pref =>
         job.employee_types!.some(jobType =>
           jobType.includes(pref) || pref.includes(jobType)
         )
