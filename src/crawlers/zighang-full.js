@@ -284,7 +284,7 @@ async function fetchCompanyDetail(companyId) {
     const rscChunks = [];
     const regex = /self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)/g;
     let match;
-    
+
     while ((match = regex.exec(html)) !== null) {
       const decoded = match[1]
         .replace(/\\n/g, '\n')
@@ -292,11 +292,11 @@ async function fetchCompanyDetail(companyId) {
         .replace(/\\\\/g, '\\');
       rscChunks.push(decoded);
     }
-    
+
     const fullRsc = rscChunks.join('');
 
     // 회사 유형 추출 (meta keywords에서)
-    let company_type = '중소기업'; // 기본값
+    let company_type = '기타'; // 기본값 (정보 없을 때)
     const keywordsMatch = fullRsc.match(/\["\$","meta","3",\{"name":"keywords","content":"([^"]+)"\}\]/);
     if (keywordsMatch) {
       const keywords = keywordsMatch[1].split(',').map(k => k.trim());
@@ -314,8 +314,8 @@ async function fetchCompanyDetail(companyId) {
     return { company_type };
   } catch (error) {
     console.error(`회사 상세 정보 크롤링 실패 (${companyId}):`, error.message);
-    // Fallback 값 반환
-    return { company_type: '중소기업' };
+    // NULL 방지: 에러 시에도 반드시 객체 반환
+    return { company_type: '기타' };
   }
 }
 
@@ -392,31 +392,41 @@ export async function fetchJobDetail(entry) {
       const education = extractEducation(recruitment, detail.requirements);
       
       // 회사 유형 추출 (hasDetailInfo 분기 처리)
-      let company_type = '중소기업'; // 기본값
-      
+      let company_type = '기타'; // 기본값 (정보 없을 때)
+
       const companyId = recruitment.company?.id;
       const hasDetailInfo = recruitment.company?.hasDetailInfo;
-      
+
       if (companyId && hasDetailInfo === true) {
         // hasDetailInfo가 true면 회사 상세 페이지 크롤링
         console.log(`  ℹ️  회사 상세 정보 크롤링: ${recruitment.company?.name} (${companyId})`);
-        const companyDetail = await fetchCompanyDetail(companyId);
-        company_type = companyDetail.company_type;
+        try {
+          const companyDetail = await fetchCompanyDetail(companyId);
+          // NULL 방지: company_type이 유효한 값인지 확인
+          if (companyDetail && companyDetail.company_type) {
+            company_type = companyDetail.company_type;
+          } else {
+            console.log(`  ⚠️  회사 유형 추출 실패, 기본값 '기타' 사용`);
+          }
+        } catch (error) {
+          console.error(`  ❌ fetchCompanyDetail 에러: ${error.message}`);
+          company_type = '기타'; // 에러 시 명시적으로 '기타' 설정
+        }
       } else {
-        // hasDetailInfo가 false이거나 없으면 fallback
-        console.log(`  ⚠️  회사 상세 정보 없음, 기본값 사용: ${recruitment.company?.name}`);
+        // hasDetailInfo가 false이거나 없으면 기본값 '기타' 유지
+        console.log(`  ⚠️  회사 상세 정보 없음, 기본값 '기타' 사용: ${recruitment.company?.name}`);
       }
       
       return {
         id: entry.id,
         source: 'zighang',
 
-        company: recruitment.company?.name || '',
+        company: recruitment.company?.name || '정보없음',
         company_id: companyId || null,
         company_image: recruitment.company?.image || null,
         company_type,  // 추가: 회사 유형
 
-        title: recruitment.title || '',
+        title: recruitment.title || '제목없음',
         regions: recruitment.regions || [],
         location: recruitment.regions?.[0] || '',
         career_min: recruitment.careerMin ?? null,
@@ -469,12 +479,12 @@ export async function fetchJobDetail(entry) {
       id: entry.id,
       source: 'zighang',
 
-      company: jobPosting.hiringOrganization?.name || '',
+      company: jobPosting.hiringOrganization?.name || '정보없음',
       company_id: null,
       company_image: null,
-      company_type: '중소기업',  // fallback 기본값
+      company_type: '기타',  // fallback 기본값 (정보 없을 때)
 
-      title: jobPosting.title || '',
+      title: jobPosting.title || '제목없음',
       regions: locations,
       location: locations[0] || '',
       career_min: null,
